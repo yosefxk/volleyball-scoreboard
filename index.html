@@ -127,10 +127,10 @@
 
     <!-- Right: Quick Controls -->
     <div class="flex items-center gap-1.5">
-      <!-- Remote Setup / Keymap Modal Button -->
-      <button onclick="openKeymapModal()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-cyan-400 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Remote Setup & Diagnostics">
-        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
-        <span class="hidden sm:inline">Remote Setup</span>
+      <!-- Direct Bluetooth Pairing Button -->
+      <button id="btn-bluetooth-pair" onclick="requestDirectBluetooth()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-cyan-400 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Pair Bluetooth Clicker Directly">
+        <span id="ble-status-dot" class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
+        <span id="ble-btn-text" class="hidden sm:inline">Pair Remote</span>
       </button>
 
       <!-- Screen Wake Lock Toggle -->
@@ -202,8 +202,13 @@
   <!-- LIVE EVENT DEBUG STATUS BAR -->
   <div id="debug-status-bar" class="w-full bg-neutral-950 border-b border-neutral-800 px-3 py-1 text-[11px] font-mono text-neutral-400 flex items-center justify-between">
     <div class="flex items-center gap-2 truncate">
-      <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
-      <span id="live-debug-text">Ready. Click your remote or tap a team card...</span>
+      <span id="debug-indicator" class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
+      <span id="live-debug-text">Ready. Click remote button or tap team card...</span>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <button onclick="openKeymapModal()" class="text-cyan-400 underline hover:text-cyan-300 text-[10px]">
+        Config
+      </button>
     </div>
   </div>
 
@@ -249,7 +254,7 @@
         </button>
 
         <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span id="hint-key-team1" class="text-yellow-400 font-bold">Btn 1</span>
+          <span id="hint-key-team1" class="text-yellow-400 font-bold">Button 1</span>
         </div>
 
         <button onclick="incrementScore('team1', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-yellow-300" title="Add 1 point">
@@ -297,7 +302,7 @@
         </button>
 
         <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span id="hint-key-team2" class="text-cyan-400 font-bold">Btn 2</span>
+          <span id="hint-key-team2" class="text-cyan-400 font-bold">Button 2</span>
         </div>
 
         <button onclick="incrementScore('team2', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-cyan-300" title="Add 1 point">
@@ -343,19 +348,20 @@
           <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
           </svg>
-          <h3 class="text-xl font-black uppercase tracking-wider text-cyan-400">Remote Setup & Diagnostics</h3>
+          <h3 class="text-xl font-black uppercase tracking-wider text-cyan-400">Bluetooth Remote Setup</h3>
         </div>
         <button onclick="closeKeymapModal()" class="text-neutral-400 hover:text-white text-2xl font-black">✕</button>
       </div>
 
-      <!-- Live Clicker Test Box -->
-      <div class="p-4 bg-neutral-950 rounded-xl border-2 border-cyan-500/50 mb-4 text-center">
-        <div class="text-xs uppercase tracking-wider text-cyan-300 font-bold mb-1.5">Interactive Remote Test Box</div>
-        <input type="text" id="interactive-test-input" placeholder="Tap here, then press remote buttons..." 
-               class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2.5 text-center text-sm font-mono font-bold text-yellow-300 placeholder-neutral-500 focus:outline-none focus:border-cyan-400">
-        <div id="key-test-feedback" class="text-xs font-mono font-bold text-neutral-300 mt-2">
-          Tap the input above and press both buttons on your remote to test.
+      <!-- Bluetooth Connection Status Banner -->
+      <div class="p-3.5 bg-gradient-to-r from-cyan-950/80 to-blue-950/80 rounded-xl border border-cyan-500/50 mb-4 flex items-center justify-between gap-3">
+        <div>
+          <div class="text-xs font-black uppercase text-cyan-300" id="ble-modal-status-text">Bluetooth: Ready to Pair</div>
+          <div class="text-[11px] text-neutral-300 mt-0.5" id="ble-modal-sub-text">Click below to connect directly to your AB Shutter3.</div>
         </div>
+        <button onclick="requestDirectBluetooth()" class="px-3.5 py-2 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow active:scale-95 transition whitespace-nowrap">
+          Pair / Reconnect
+        </button>
       </div>
 
       <!-- Key Mapping Controls -->
@@ -363,42 +369,36 @@
         <!-- Team A Button -->
         <div class="p-3 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
           <div>
-            <div class="text-xs uppercase font-black text-yellow-400" id="keymap-label-team1">Team A Trigger</div>
+            <div class="text-xs uppercase font-black text-yellow-400" id="keymap-label-team1">Team A Button</div>
             <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
-              Mapped: <span id="keymap-code-team1" class="text-yellow-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Enter / VolUp</span>
+              Mapped: <span id="keymap-code-team1" class="text-yellow-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Button 1 (iOS / Enter)</span>
             </div>
           </div>
           <button id="btn-record-team1" onclick="startKeyRecording('team1')" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
-            Record Trigger
+            Learn Button
           </button>
         </div>
 
         <!-- Team B Button -->
         <div class="p-3 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
           <div>
-            <div class="text-xs uppercase font-black text-cyan-400" id="keymap-label-team2">Team B Trigger</div>
+            <div class="text-xs uppercase font-black text-cyan-400" id="keymap-label-team2">Team B Button</div>
             <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
-              Mapped: <span id="keymap-code-team2" class="text-cyan-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Space / VolDown</span>
+              Mapped: <span id="keymap-code-team2" class="text-cyan-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Button 2 (Android / Vol)</span>
             </div>
           </div>
           <button id="btn-record-team2" onclick="startKeyRecording('team2')" class="px-3 py-1.5 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
-            Record Trigger
+            Learn Button
           </button>
         </div>
       </div>
 
-      <!-- Android Remote Solutions Accordion -->
-      <div class="text-xs bg-neutral-800/60 p-3.5 rounded-xl border border-neutral-700/60 space-y-2 mb-4">
-        <div class="font-bold text-yellow-300 uppercase text-[11px] flex items-center gap-1">
-          <span>💡</span> <span>Why did the shutter not show in the scan?</span>
+      <!-- Live Diagnostics Feedback Box -->
+      <div class="p-3 bg-neutral-950 rounded-xl border border-dashed border-neutral-700 mb-4 text-center">
+        <div class="text-[10px] uppercase tracking-wider text-neutral-400 font-bold mb-1">Live Clicker Signal Detector</div>
+        <div id="key-test-feedback" class="text-xs font-mono font-bold text-neutral-300 py-1">
+          Click any button on your shutter remote to test...
         </div>
-        <p class="text-neutral-300 text-[11px] leading-relaxed">
-          Standard 2-button selfie clickers (AB Shutter 3) are <strong>Classic Bluetooth HID Keyboards</strong>. When paired in Android Settings, Android connects to them as a hardware keyboard.
-        </p>
-        <p class="text-neutral-300 text-[11px] leading-relaxed">
-          • <strong>Button 1</strong> sends an <code class="text-yellow-300 font-mono">Enter</code> keypress (which the scoreboard listens for).<br>
-          • <strong>Button 2</strong> sends a <code class="text-cyan-300 font-mono">VolumeUp</code> keypress.
-        </p>
       </div>
 
       <!-- Modal Footer -->
@@ -472,8 +472,9 @@
        BEACH VOLLEYBALL SCOREBOARD - CORE STATE & ENGINE
        ========================================================================== */
 
-    const STATE_KEY = 'vb_scoreboard_state_v4';
-    const KEYMAP_KEY = 'vb_scoreboard_keymap_v4';
+    const STATE_KEY = 'vb_scoreboard_state_v5';
+    const KEYMAP_KEY = 'vb_scoreboard_keymap_v5';
+    const BLEMAP_KEY = 'vb_scoreboard_blemap_v5';
 
     let state = {
       team1: { name: 'TEAM A', score: 0, sets: 0 },
@@ -494,6 +495,11 @@
       team2: ['Space', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'AudioVolumeDown', 'VolumeDown', 'MediaPlayPause'],
     };
 
+    let bleMap = {
+      team1: null,
+      team2: null,
+    };
+
     const clickTimers = { team1: null, team2: null };
     const lastClickTimes = { team1: 0, team2: 0 };
     const DOUBLE_CLICK_WINDOW_MS = 400;
@@ -501,13 +507,13 @@
     let wakeLockSentinel = null;
     let recordingTarget = null;
     let lastGamepadButtonState = {};
+    let connectedBluetoothDevice = null;
 
     function initApp() {
       loadSavedState();
       loadSavedKeymap();
       renderUI();
       setupKeyListeners();
-      setupInteractiveTestInput();
       setupMediaSession();
       setupGamepadPolling();
       setupVisibilityListener();
@@ -541,6 +547,7 @@
     function saveKeymap() {
       try {
         localStorage.setItem(KEYMAP_KEY, JSON.stringify(keymap));
+        localStorage.setItem(BLEMAP_KEY, JSON.stringify(bleMap));
       } catch (e) {
         console.warn('Keymap save failed:', e);
       }
@@ -548,26 +555,154 @@
 
     function loadSavedKeymap() {
       try {
-        const saved = localStorage.getItem(KEYMAP_KEY);
-        if (saved) {
-          keymap = { ...keymap, ...JSON.parse(saved) };
-        }
+        const savedKey = localStorage.getItem(KEYMAP_KEY);
+        if (savedKey) keymap = { ...keymap, ...JSON.parse(savedKey) };
+        const savedBle = localStorage.getItem(BLEMAP_KEY);
+        if (savedBle) bleMap = { ...bleMap, ...JSON.parse(savedBle) };
       } catch (e) {
         console.warn('Keymap load failed:', e);
       }
     }
 
     /* ==========================================================================
-       INTERACTIVE TEST INPUT BOX
+       DIRECT WEB BLUETOOTH WITH GATT NOTIFICATION SUBSCRIPTIONS
        ========================================================================== */
 
-    function setupInteractiveTestInput() {
-      const input = document.getElementById('interactive-test-input');
-      if (input) {
-        input.addEventListener('keydown', (e) => {
-          const code = e.code || e.key;
-          logRemoteDiagnostic(`Captured in input: [${code}] (Key: "${e.key}")`);
+    async function requestDirectBluetooth() {
+      if (!('bluetooth' in navigator)) {
+        alert("Web Bluetooth API is not supported in this browser. Please open over HTTPS on Chrome.");
+        return;
+      }
+
+      try {
+        logRemoteDiagnostic("Scanning for Bluetooth clickers...");
+        const device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [
+            'human_interface_device', 
+            0x1812, 
+            'generic_access', 
+            0x1800, 
+            'battery_service', 
+            0x180F,
+            'generic_attribute', 
+            0x1801,
+            'device_information',
+            0x180A
+          ]
         });
+
+        connectedBluetoothDevice = device;
+        logRemoteDiagnostic(`Connecting to: ${device.name || 'AB Shutter3'}...`);
+
+        device.addEventListener('gattserverdisconnected', () => {
+          logRemoteDiagnostic(`Bluetooth Remote Disconnected.`);
+          updateBleUI(false);
+          showToast("Bluetooth Remote Disconnected");
+        });
+
+        const server = await device.gatt.connect();
+        logRemoteDiagnostic(`Connected! Subscribing to button notifications...`);
+
+        let activeChannels = 0;
+
+        try {
+          const services = await server.getPrimaryServices();
+          for (const service of services) {
+            try {
+              const characteristics = await service.getCharacteristics();
+              for (const char of characteristics) {
+                if (char.properties.notify || char.properties.indicate) {
+                  try {
+                    await char.startNotifications();
+                    char.addEventListener('characteristicvaluechanged', (event) => {
+                      handleBleNotification(event.target.value);
+                    });
+                    activeChannels++;
+                  } catch (e) {
+                    console.log("Could not start notification on char:", char.uuid, e);
+                  }
+                }
+              }
+            } catch (err) {
+              console.log("Could not get characteristics for service:", service.uuid);
+            }
+          }
+        } catch (err) {
+          console.warn("Service enumeration error:", err);
+        }
+
+        updateBleUI(true, device.name || 'AB Shutter3');
+        logRemoteDiagnostic(`✓ Ready! Connected to ${device.name || 'AB Shutter3'} (${activeChannels} channels active)`);
+        showToast(`Connected to ${device.name || 'AB Shutter3'}! Click to score.`);
+      } catch (err) {
+        console.warn("Bluetooth connection error:", err);
+        logRemoteDiagnostic(`Bluetooth: ${err.message}`);
+      }
+    }
+
+    function handleBleNotification(dataView) {
+      const bytes = [];
+      for (let i = 0; i < dataView.byteLength; i++) {
+        bytes.push(dataView.getUint8(i));
+      }
+
+      // Check if release (all 0s)
+      const isRelease = bytes.every(b => b === 0);
+      const signature = bytes.join(',');
+
+      logRemoteDiagnostic(`BLE Signal: [${bytes.map(b => '0x' + b.toString(16).padStart(2,'0')).join(' ')}]`);
+
+      if (isRelease) return;
+
+      // If recording target in modal
+      if (recordingTarget) {
+        bleMap[recordingTarget] = signature;
+        saveKeymap();
+        logRemoteDiagnostic(`✓ Learned ${state[recordingTarget].name}: [${signature}]`);
+        showToast(`Learned button for ${state[recordingTarget].name}!`);
+        stopKeyRecording();
+        renderUI();
+        return;
+      }
+
+      // If explicit mapping matches
+      if (bleMap.team1 && bleMap.team1 === signature) {
+        triggerTeamScoring('team1');
+        return;
+      }
+      if (bleMap.team2 && bleMap.team2 === signature) {
+        triggerTeamScoring('team2');
+        return;
+      }
+
+      // Smart Default Heuristics for AB Shutter 3 & selfie clickers
+      // Button 1 (iOS) usually has byte[0]=1 or byte[2]=40 or byte[1]=1
+      // Button 2 (Android) usually has byte[0]=2 or byte[2]=233 (0xe9) or byte[1]=2
+      const firstNonZero = bytes.find(b => b !== 0) || 0;
+      if (bytes[0] === 1 || bytes[1] === 1 || firstNonZero === 1 || firstNonZero === 0x28 || firstNonZero === 40) {
+        triggerTeamScoring('team1');
+      } else {
+        triggerTeamScoring('team2');
+      }
+    }
+
+    function updateBleUI(connected, name = '') {
+      const dot = document.getElementById('ble-status-dot');
+      const text = document.getElementById('ble-btn-text');
+      const modalText = document.getElementById('ble-modal-status-text');
+      const modalSub = document.getElementById('ble-modal-sub-text');
+
+      if (connected) {
+        if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block";
+        if (text) text.innerText = name ? `✓ ${name}` : 'Connected';
+        if (modalText) modalText.innerText = `Bluetooth: Connected to ${name || 'Remote'}`;
+        if (modalSub) modalSub.innerText = "Button notifications are actively listening.";
+      } else {
+        if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse";
+        if (text) text.innerText = "Pair Remote";
+        if (modalText) modalText.innerText = "Bluetooth: Ready to Pair";
+        if (modalSub) modalSub.innerText = "Click below to connect directly to your AB Shutter3.";
       }
     }
 
@@ -950,14 +1085,14 @@
 
       const testFeedback = document.getElementById('key-test-feedback');
       if (testFeedback) {
-        testFeedback.innerHTML = `<span class="text-cyan-300 font-bold">⚡ Received:</span> <code class="bg-neutral-800 px-2 py-0.5 rounded text-white">${msg}</code>`;
+        testFeedback.innerHTML = `<span class="text-cyan-300 font-bold">⚡ Signal:</span> <code class="bg-neutral-800 px-2 py-0.5 rounded text-white">${msg}</code>`;
       }
     }
 
     function openKeymapModal() {
       updateKeymapDisplay();
-      document.getElementById('keymap-label-team1').innerText = `Team A Trigger (${state.team1.name})`;
-      document.getElementById('keymap-label-team2').innerText = `Team B Trigger (${state.team2.name})`;
+      document.getElementById('keymap-label-team1').innerText = `Team A Button (${state.team1.name})`;
+      document.getElementById('keymap-label-team2').innerText = `Team B Button (${state.team2.name})`;
       document.getElementById('modal-keymap').classList.remove('hidden');
     }
 
@@ -967,20 +1102,20 @@
     }
 
     function updateKeymapDisplay() {
-      document.getElementById('keymap-code-team1').innerText = keymap.team1.slice(0, 3).join(' / ') + (keymap.team1.length > 3 ? '...' : '');
-      document.getElementById('keymap-code-team2').innerText = keymap.team2.slice(0, 3).join(' / ') + (keymap.team2.length > 3 ? '...' : '');
+      document.getElementById('keymap-code-team1').innerText = bleMap.team1 ? `BLE: [${bleMap.team1}]` : keymap.team1.slice(0, 2).join(' / ');
+      document.getElementById('keymap-code-team2').innerText = bleMap.team2 ? `BLE: [${bleMap.team2}]` : keymap.team2.slice(0, 2).join(' / ');
     }
 
     function startKeyRecording(target) {
       recordingTarget = target;
       const btn = document.getElementById(`btn-record-${target}`);
       if (btn) {
-        btn.innerText = 'Press Button...';
+        btn.innerText = 'Click Remote Button...';
         btn.classList.add('animate-pulse', 'bg-white', 'text-black');
       }
       const testFeedback = document.getElementById('key-test-feedback');
       if (testFeedback) {
-        testFeedback.innerHTML = `<span class="text-cyan-400 animate-pulse font-bold">Listening... Click your remote button now!</span>`;
+        testFeedback.innerHTML = `<span class="text-cyan-400 animate-pulse font-bold">Listening... Click your shutter remote button now!</span>`;
       }
     }
 
@@ -988,7 +1123,7 @@
       if (recordingTarget) {
         const btn = document.getElementById(`btn-record-${recordingTarget}`);
         if (btn) {
-          btn.innerText = 'Record Trigger';
+          btn.innerText = 'Learn Button';
           btn.classList.remove('animate-pulse', 'bg-white', 'text-black');
         }
       }
@@ -1001,9 +1136,10 @@
         team1: ['Enter', 'NumpadEnter', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'AudioVolumeUp', 'VolumeUp'],
         team2: ['Space', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'AudioVolumeDown', 'VolumeDown', 'MediaPlayPause'],
       };
+      bleMap = { team1: null, team2: null };
       saveKeymap();
       updateKeymapDisplay();
-      showToast("Keymap reset to standard defaults");
+      showToast("Mappings reset to standard defaults");
       renderUI();
     }
 
@@ -1030,8 +1166,8 @@
 
       updateServeBadges();
 
-      document.getElementById('hint-key-team1').innerText = keymap.team1[0] || 'Btn 1';
-      document.getElementById('hint-key-team2').innerText = keymap.team2[0] || 'Btn 2';
+      document.getElementById('hint-key-team1').innerText = bleMap.team1 ? 'BLE 1' : (keymap.team1[0] || 'Btn 1');
+      document.getElementById('hint-key-team2').innerText = bleMap.team2 ? 'BLE 2' : (keymap.team2[0] || 'Btn 2');
 
       document.getElementById('voice-icon-on').classList.toggle('hidden', !state.voiceEnabled);
       document.getElementById('voice-icon-off').classList.toggle('hidden', state.voiceEnabled);
@@ -1211,6 +1347,10 @@
         showToast("Match has been reset");
       }
     }
+
+    /* ==========================================================================
+       SETTINGS & THEMES
+       ========================================================================== */
 
     function openSettingsModal() {
       document.getElementById('modal-settings').classList.remove('hidden');
