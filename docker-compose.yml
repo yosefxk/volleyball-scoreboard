@@ -1,0 +1,7 @@
+services:
+  scoreboard:
+    build: .
+    container_name: volleyball-scoreboard
+    ports:
+      - "8085:80"
+    restart: unless-stopped
