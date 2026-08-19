@@ -62,14 +62,12 @@
   </script>
 
   <style>
-    /* Prevent selection and default pull-to-refresh on mobile */
     * {
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
     }
     
-    /* Responsive score typography */
     .huge-score {
       font-size: min(32vw, 36vh);
       line-height: 0.85;
@@ -84,7 +82,6 @@
       }
     }
 
-    /* High contrast text strokes for extreme outdoor sunlight */
     .text-stroke-black {
       -webkit-text-stroke: 3px #000;
     }
@@ -92,7 +89,6 @@
       -webkit-text-stroke: 6px #000;
     }
     
-    /* Scrollbar hide */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -100,23 +96,9 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-
-    /* Transparent input trap for Android keyboard capture */
-    .focus-trap {
-      position: absolute;
-      top: -9999px;
-      left: -9999px;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      pointer-events: none;
-    }
   </style>
 </head>
-<body class="h-full w-full bg-black text-white font-display overflow-hidden flex flex-col justify-between select-none" onclick="keepFocusTrap()">
-
-  <!-- INVISIBLE FOCUS TRAP INPUT (Allows Android Chrome to capture hardware keys) -->
-  <input type="text" id="android-focus-trap" class="focus-trap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly>
+<body class="h-full w-full bg-black text-white font-display overflow-hidden flex flex-col justify-between select-none">
 
   <!-- HIDDEN AUDIO ELEMENT FOR MEDIA SESSION API -->
   <audio id="silent-audio-driver" loop preload="auto">
@@ -143,12 +125,12 @@
       <span class="hidden sm:inline text-neutral-500 text-[10px]">(Switch at 7s)</span>
     </div>
 
-    <!-- Right: Quick Controls (Remote/Audio Mode, Wake Lock, Voice, Bluetooth HID, Swap, Settings, Fullscreen) -->
+    <!-- Right: Quick Controls -->
     <div class="flex items-center gap-1.5">
-      <!-- Remote Setup / Pairing Modal -->
-      <button onclick="openKeymapModal()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-cyan-400/80 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Bluetooth Remote Setup & Pairing">
-        <span id="remote-mode-dot" class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
-        <span class="hidden sm:inline">Remote</span>
+      <!-- Remote Setup / Keymap Modal Button -->
+      <button onclick="openKeymapModal()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-cyan-400 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Remote Setup & Diagnostics">
+        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
+        <span class="hidden sm:inline">Remote Setup</span>
       </button>
 
       <!-- Screen Wake Lock Toggle -->
@@ -181,8 +163,8 @@
         </svg>
       </button>
 
-      <!-- Fullscreen Toggle (Also enables Keyboard Lock API on Android) -->
-      <button onclick="toggleFullscreen()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 transition active:scale-95" title="Toggle Fullscreen (Locks Volume Keys on Android)">
+      <!-- Fullscreen Toggle -->
+      <button onclick="toggleFullscreen()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 transition active:scale-95" title="Toggle Fullscreen">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/>
         </svg>
@@ -217,16 +199,11 @@
     <span id="toast-msg">Score updated</span>
   </div>
 
-  <!-- LIVE EVENT DEBUG BAR (VISIBLE FOR RAPID REMOTE VERIFICATION) -->
-  <div id="debug-status-bar" class="w-full bg-neutral-950/95 border-b border-neutral-800 px-3 py-1 text-[11px] font-mono text-neutral-400 flex items-center justify-between">
+  <!-- LIVE EVENT DEBUG STATUS BAR -->
+  <div id="debug-status-bar" class="w-full bg-neutral-950 border-b border-neutral-800 px-3 py-1 text-[11px] font-mono text-neutral-400 flex items-center justify-between">
     <div class="flex items-center gap-2 truncate">
       <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
-      <span id="live-debug-text">Listening for Remote / Key / Volume events...</span>
-    </div>
-    <div class="flex items-center gap-2 shrink-0">
-      <button onclick="requestDirectBluetooth()" class="px-2 py-0.5 bg-cyan-950 text-cyan-300 border border-cyan-600 rounded text-[10px] font-bold hover:bg-cyan-900">
-        🔗 Direct Bluetooth
-      </button>
+      <span id="live-debug-text">Ready. Click your remote or tap a team card...</span>
     </div>
   </div>
 
@@ -261,7 +238,7 @@
           0
         </div>
         <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
-          Click / Remote = +1 &nbsp;|&nbsp; Rapid Double Click = -1
+          Tap / Remote = +1 &nbsp;|&nbsp; Double Tap = -1
         </div>
       </div>
 
@@ -272,7 +249,7 @@
         </button>
 
         <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span id="hint-key-team1" class="text-yellow-400 font-bold">Vol Up / Btn 1</span>
+          <span id="hint-key-team1" class="text-yellow-400 font-bold">Btn 1</span>
         </div>
 
         <button onclick="incrementScore('team1', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-yellow-300" title="Add 1 point">
@@ -309,7 +286,7 @@
           0
         </div>
         <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
-          Click / Remote = +1 &nbsp;|&nbsp; Rapid Double Click = -1
+          Tap / Remote = +1 &nbsp;|&nbsp; Double Tap = -1
         </div>
       </div>
 
@@ -320,7 +297,7 @@
         </button>
 
         <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span id="hint-key-team2" class="text-cyan-400 font-bold">Vol Down / Btn 2</span>
+          <span id="hint-key-team2" class="text-cyan-400 font-bold">Btn 2</span>
         </div>
 
         <button onclick="incrementScore('team2', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-cyan-300" title="Add 1 point">
@@ -358,7 +335,7 @@
 
   <!-- ==================== MODALS ==================== -->
 
-  <!-- 1. BLUETOOTH REMOTE / MEDIA / HID KEY MAPPING MODAL -->
+  <!-- 1. BLUETOOTH REMOTE MAPPING & DIAGNOSTICS MODAL -->
   <div id="modal-keymap" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-neutral-900 border-2 border-cyan-400/80 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl text-white my-auto max-h-[90vh] overflow-y-auto no-scrollbar">
       <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
@@ -366,24 +343,19 @@
           <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
           </svg>
-          <h3 class="text-xl font-black uppercase tracking-wider text-cyan-400">Android & Bluetooth Remote Setup</h3>
+          <h3 class="text-xl font-black uppercase tracking-wider text-cyan-400">Remote Setup & Diagnostics</h3>
         </div>
         <button onclick="closeKeymapModal()" class="text-neutral-400 hover:text-white text-2xl font-black">✕</button>
       </div>
 
-      <!-- Direct Web Bluetooth Pairing Box (For Android Chrome) -->
-      <div class="p-3.5 bg-gradient-to-r from-cyan-950/80 to-blue-950/80 rounded-xl border border-cyan-500/50 mb-4">
-        <div class="flex items-center justify-between gap-2 mb-2">
-          <div class="text-xs font-black uppercase text-cyan-300 flex items-center gap-1.5">
-            <span>🔗</span> Direct Web Bluetooth Pairing
-          </div>
-          <button onclick="requestDirectBluetooth()" class="px-3 py-1.5 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow active:scale-95 transition">
-            Pair Remote
-          </button>
+      <!-- Live Clicker Test Box -->
+      <div class="p-4 bg-neutral-950 rounded-xl border-2 border-cyan-500/50 mb-4 text-center">
+        <div class="text-xs uppercase tracking-wider text-cyan-300 font-bold mb-1.5">Interactive Remote Test Box</div>
+        <input type="text" id="interactive-test-input" placeholder="Tap here, then press remote buttons..." 
+               class="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-2.5 text-center text-sm font-mono font-bold text-yellow-300 placeholder-neutral-500 focus:outline-none focus:border-cyan-400">
+        <div id="key-test-feedback" class="text-xs font-mono font-bold text-neutral-300 mt-2">
+          Tap the input above and press both buttons on your remote to test.
         </div>
-        <p class="text-[11px] text-neutral-300 leading-relaxed">
-          Pairs directly with your Bluetooth clicker over Chrome Web Bluetooth, completely bypassing Android's volume slider.
-        </p>
       </div>
 
       <!-- Key Mapping Controls -->
@@ -393,7 +365,7 @@
           <div>
             <div class="text-xs uppercase font-black text-yellow-400" id="keymap-label-team1">Team A Trigger</div>
             <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
-              Mapped: <span id="keymap-code-team1" class="text-yellow-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">VolumeUp / KeyA</span>
+              Mapped: <span id="keymap-code-team1" class="text-yellow-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Enter / VolUp</span>
             </div>
           </div>
           <button id="btn-record-team1" onclick="startKeyRecording('team1')" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
@@ -406,7 +378,7 @@
           <div>
             <div class="text-xs uppercase font-black text-cyan-400" id="keymap-label-team2">Team B Trigger</div>
             <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
-              Mapped: <span id="keymap-code-team2" class="text-cyan-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">VolumeDown / KeyB</span>
+              Mapped: <span id="keymap-code-team2" class="text-cyan-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Space / VolDown</span>
             </div>
           </div>
           <button id="btn-record-team2" onclick="startKeyRecording('team2')" class="px-3 py-1.5 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
@@ -415,24 +387,18 @@
         </div>
       </div>
 
-      <!-- Live Key & Remote Diagnostics Area -->
-      <div class="p-3 bg-neutral-950 rounded-xl border border-dashed border-neutral-700 mb-4 text-center">
-        <div class="text-[10px] uppercase tracking-wider text-neutral-400 font-bold mb-1">Live Clicker Detector</div>
-        <div id="key-test-feedback" class="text-xs font-mono font-bold text-neutral-300 py-1">
-          Click your Bluetooth remote buttons to test...
-        </div>
-      </div>
-
-      <!-- Android Specific Tips -->
-      <div class="text-xs bg-neutral-800/60 p-3 rounded-xl border border-neutral-700/60 space-y-2 mb-4">
+      <!-- Android Remote Solutions Accordion -->
+      <div class="text-xs bg-neutral-800/60 p-3.5 rounded-xl border border-neutral-700/60 space-y-2 mb-4">
         <div class="font-bold text-yellow-300 uppercase text-[11px] flex items-center gap-1">
-          <span>⚡</span> <span>Android Remote Tips:</span>
+          <span>💡</span> <span>Why did the shutter not show in the scan?</span>
         </div>
-        <ul class="text-neutral-300 space-y-1 text-[11px] list-disc list-inside">
-          <li><strong>Fullscreen Mode (Recommended)</strong>: Tap the Fullscreen button in the top right. This locks keyboard & media input in Chrome to stop the OS volume bar.</li>
-          <li><strong>Remote Mode Switch</strong>: If your clicker has a switch or combo (e.g., hold <code>Power + B</code> for 3s), switch it to <em>Gamepad mode</em> or <em>Keyboard mode</em>.</li>
-          <li><strong>Direct Pairing</strong>: Click "Pair Remote" above to link Chrome directly to your clicker.</li>
-        </ul>
+        <p class="text-neutral-300 text-[11px] leading-relaxed">
+          Standard 2-button selfie clickers (AB Shutter 3) are <strong>Classic Bluetooth HID Keyboards</strong>. When paired in Android Settings, Android connects to them as a hardware keyboard.
+        </p>
+        <p class="text-neutral-300 text-[11px] leading-relaxed">
+          • <strong>Button 1</strong> sends an <code class="text-yellow-300 font-mono">Enter</code> keypress (which the scoreboard listens for).<br>
+          • <strong>Button 2</strong> sends a <code class="text-cyan-300 font-mono">VolumeUp</code> keypress.
+        </p>
       </div>
 
       <!-- Modal Footer -->
@@ -456,7 +422,6 @@
       </div>
 
       <div class="space-y-4 mb-6">
-        <!-- Target Points -->
         <div>
           <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">Points to Win Set</label>
           <div class="grid grid-cols-3 gap-2">
@@ -466,7 +431,6 @@
           </div>
         </div>
 
-        <!-- Switch Frequency -->
         <div>
           <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">Court Side Switch Interval</label>
           <div class="grid grid-cols-3 gap-2">
@@ -476,7 +440,6 @@
           </div>
         </div>
 
-        <!-- Theme / Outdoor Sunlight Mode -->
         <div>
           <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">High-Contrast Color Theme</label>
           <select id="select-theme" onchange="changeTheme(this.value)" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-sm font-bold text-white focus:outline-none focus:border-yellow-400">
@@ -486,7 +449,6 @@
           </select>
         </div>
 
-        <!-- Speech Settings -->
         <div>
           <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">Voice Speech Style</label>
           <div class="flex items-center gap-2">
@@ -510,10 +472,9 @@
        BEACH VOLLEYBALL SCOREBOARD - CORE STATE & ENGINE
        ========================================================================== */
 
-    const STATE_KEY = 'vb_scoreboard_state_v3';
-    const KEYMAP_KEY = 'vb_scoreboard_keymap_v3';
+    const STATE_KEY = 'vb_scoreboard_state_v4';
+    const KEYMAP_KEY = 'vb_scoreboard_keymap_v4';
 
-    // Application State
     let state = {
       team1: { name: 'TEAM A', score: 0, sets: 0 },
       team2: { name: 'TEAM B', score: 0, sets: 0 },
@@ -528,48 +489,30 @@
       setHistory: [],
     };
 
-    // Default Keymap & Triggers
     let keymap = {
-      team1: ['AudioVolumeUp', 'VolumeUp', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'MediaTrackNext', 'MediaPreviousTrack'],
-      team2: ['AudioVolumeDown', 'VolumeDown', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'MediaPlayPause', 'Enter', 'Space'],
+      team1: ['Enter', 'NumpadEnter', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'AudioVolumeUp', 'VolumeUp'],
+      team2: ['Space', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'AudioVolumeDown', 'VolumeDown', 'MediaPlayPause'],
     };
 
-    // Double-Click Scoring Logic Timers (within 400ms)
     const clickTimers = { team1: null, team2: null };
     const lastClickTimes = { team1: 0, team2: 0 };
     const DOUBLE_CLICK_WINDOW_MS = 400;
-
-    // Undo History Stack
     const historyStack = [];
-
-    // Wake Lock instance
     let wakeLockSentinel = null;
-
-    // Key recording target in modal
     let recordingTarget = null;
-
-    // Gamepad state
     let lastGamepadButtonState = {};
-
-    // Bluetooth GATT device instance
-    let connectedBluetoothDevice = null;
-
-    /* ==========================================================================
-       INITIALIZATION & STORAGE
-       ========================================================================== */
 
     function initApp() {
       loadSavedState();
       loadSavedKeymap();
       renderUI();
       setupKeyListeners();
+      setupInteractiveTestInput();
       setupMediaSession();
       setupGamepadPolling();
       setupVisibilityListener();
-      setupFocusTrap();
       startSilentAudioDriver();
 
-      // Check Wake Lock support
       if (!('wakeLock' in navigator)) {
         const btnWake = document.getElementById('btn-wakelock');
         if (btnWake) btnWake.title = "Screen Wake Lock API not supported on this browser";
@@ -615,57 +558,16 @@
     }
 
     /* ==========================================================================
-       FOCUS TRAP (ROUTES ANDROID HARDWARE CLICKER KEYS TO BROWSER)
+       INTERACTIVE TEST INPUT BOX
        ========================================================================== */
 
-    function setupFocusTrap() {
-      const trap = document.getElementById('android-focus-trap');
-      if (trap) {
-        trap.focus();
-        trap.addEventListener('input', (e) => {
-          trap.value = '';
+    function setupInteractiveTestInput() {
+      const input = document.getElementById('interactive-test-input');
+      if (input) {
+        input.addEventListener('keydown', (e) => {
+          const code = e.code || e.key;
+          logRemoteDiagnostic(`Captured in input: [${code}] (Key: "${e.key}")`);
         });
-      }
-    }
-
-    function keepFocusTrap() {
-      const trap = document.getElementById('android-focus-trap');
-      if (trap && document.activeElement !== trap) {
-        trap.focus();
-      }
-    }
-
-    /* ==========================================================================
-       DIRECT WEB BLUETOOTH PAIRING (CHROME ON ANDROID / DESKTOP)
-       ========================================================================== */
-
-    async function requestDirectBluetooth() {
-      if (!('bluetooth' in navigator)) {
-        alert("Web Bluetooth API is not supported in this browser. Please use Chrome on Android or Desktop.");
-        return;
-      }
-
-      try {
-        logRemoteDiagnostic("Requesting Bluetooth device...");
-        const device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: ['generic_access', 'battery_service', 'human_interface_device', 0x1812, 0x180F, 0x1800]
-        });
-
-        connectedBluetoothDevice = device;
-        logRemoteDiagnostic(`Connecting to: ${device.name || 'Bluetooth Remote'}...`);
-
-        device.addEventListener('gattserverdisconnected', () => {
-          logRemoteDiagnostic(`Bluetooth Remote Disconnected.`);
-          showToast("Bluetooth Remote Disconnected");
-        });
-
-        const server = await device.gatt.connect();
-        logRemoteDiagnostic(`✓ Connected to ${device.name || 'Remote'}! Listening for button inputs...`);
-        showToast(`Connected to ${device.name || 'Remote'}!`);
-      } catch (err) {
-        console.warn("Bluetooth connection error:", err);
-        logRemoteDiagnostic(`Bluetooth error: ${err.message}`);
       }
     }
 
@@ -992,17 +894,15 @@
     }
 
     /* ==========================================================================
-       KEYBOARD & VOLUME KEY INTERCEPTION ENGINE
+       KEYBOARD & REMOTE KEY INTERCEPTION ENGINE
        ========================================================================== */
 
     function setupKeyListeners() {
       const interceptHandler = (e) => {
         const code = e.code || e.key;
 
-        // Diagnostic log
-        logRemoteDiagnostic(`Key: [${code}] (Key: ${e.key})`);
+        logRemoteDiagnostic(`Key: [${code}] (Key: "${e.key}")`);
 
-        // If recording key mapping in modal
         if (recordingTarget) {
           e.preventDefault();
           e.stopImmediatePropagation();
@@ -1017,12 +917,10 @@
           return;
         }
 
-        // Check if key matches Team 1
         const isTeam1 = keymap.team1.includes(code) || keymap.team1.includes(e.key);
-        // Check if key matches Team 2
         const isTeam2 = keymap.team2.includes(code) || keymap.team2.includes(e.key);
 
-        if (isTeam1 || isTeam2 || ['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'PageUp', 'PageDown'].includes(code)) {
+        if (isTeam1 || isTeam2 || ['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'Enter', 'PageUp', 'PageDown'].includes(code)) {
           e.preventDefault();
           e.stopImmediatePropagation();
         }
@@ -1052,7 +950,7 @@
 
       const testFeedback = document.getElementById('key-test-feedback');
       if (testFeedback) {
-        testFeedback.innerHTML = `<span class="text-cyan-300 font-bold">⚡ Detected:</span> ${msg}`;
+        testFeedback.innerHTML = `<span class="text-cyan-300 font-bold">⚡ Received:</span> <code class="bg-neutral-800 px-2 py-0.5 rounded text-white">${msg}</code>`;
       }
     }
 
@@ -1082,7 +980,7 @@
       }
       const testFeedback = document.getElementById('key-test-feedback');
       if (testFeedback) {
-        testFeedback.innerHTML = `<span class="text-cyan-400 animate-pulse font-bold">Listening... Click your Bluetooth remote button or volume key now!</span>`;
+        testFeedback.innerHTML = `<span class="text-cyan-400 animate-pulse font-bold">Listening... Click your remote button now!</span>`;
       }
     }
 
@@ -1100,8 +998,8 @@
 
     function resetKeymapDefaults() {
       keymap = {
-        team1: ['AudioVolumeUp', 'VolumeUp', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'MediaTrackNext', 'MediaPreviousTrack'],
-        team2: ['AudioVolumeDown', 'VolumeDown', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'MediaPlayPause', 'Enter', 'Space'],
+        team1: ['Enter', 'NumpadEnter', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'AudioVolumeUp', 'VolumeUp'],
+        team2: ['Space', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'AudioVolumeDown', 'VolumeDown', 'MediaPlayPause'],
       };
       saveKeymap();
       updateKeymapDisplay();
@@ -1314,10 +1212,6 @@
       }
     }
 
-    /* ==========================================================================
-       SETTINGS & THEMES
-       ========================================================================== */
-
     function openSettingsModal() {
       document.getElementById('modal-settings').classList.remove('hidden');
       updateSettingsButtons();
@@ -1385,22 +1279,11 @@
       }
     }
 
-    async function toggleFullscreen() {
+    function toggleFullscreen() {
       if (!document.fullscreenElement) {
-        try {
-          await document.documentElement.requestFullscreen();
-          // Lock keyboard to capture hardware volume keys in Chrome
-          if ('keyboard' in navigator && 'lock' in navigator.keyboard) {
-            await navigator.keyboard.lock(['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Enter', 'Space']);
-            logRemoteDiagnostic("Keyboard & Volume keys locked to scoreboard");
-          }
-        } catch (err) {
-          console.warn(`Fullscreen / Keyboard lock note: ${err.message}`);
-        }
+        document.documentElement.requestFullscreen().catch(err => console.warn(err));
       } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
       }
     }
 
