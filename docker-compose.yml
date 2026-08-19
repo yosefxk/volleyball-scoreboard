@@ -3,5 +3,5 @@ services:
     build: .
     container_name: volleyball-scoreboard
     ports:
-      - "8085:80"
+      - "8086:80"
     restart: unless-stopped

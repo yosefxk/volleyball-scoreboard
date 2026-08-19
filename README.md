@@ -26,4 +26,4 @@ To run locally with Docker Compose:
 docker compose up -d --build
 ```
 
-Access the scoreboard at [http://localhost:8085](http://localhost:8085).
+Access the scoreboard at [http://localhost:8086](http://localhost:8086).
