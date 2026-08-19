@@ -2,9 +2,17 @@
 <html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Beach Volleyball Scoreboard</title>
   
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Scoreboard">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -96,6 +104,12 @@
 </head>
 <body class="h-full w-full bg-black text-white font-display overflow-hidden flex flex-col justify-between select-none">
 
+  <!-- HIDDEN AUDIO ELEMENT FOR MEDIA SESSION API / REMOTE INTERCEPTION -->
+  <audio id="silent-audio-driver" loop preload="auto">
+    <!-- Tiny silent WAV base64 -->
+    <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" type="audio/wav">
+  </audio>
+
   <!-- TOP APP BAR -->
   <header class="w-full bg-neutral-950/90 border-b-2 border-neutral-800 z-30 px-3 py-2 flex items-center justify-between gap-2">
     <!-- Left: Match Info & Set Counter -->
@@ -105,7 +119,7 @@
         <span id="set-indicator-text">SET 1</span>
       </span>
       <div id="set-history-container" class="hidden sm:flex items-center gap-1.5 text-xs text-neutral-400 font-mono">
-        <!-- Set History Badges go here -->
+        <!-- Set History Badges -->
       </div>
     </div>
 
@@ -116,12 +130,18 @@
       <span class="hidden sm:inline text-neutral-500 text-[10px]">(Switch at 7s)</span>
     </div>
 
-    <!-- Right: Quick Controls (Wake Lock, Voice, Bluetooth HID, Swap, Settings, Fullscreen) -->
+    <!-- Right: Quick Controls (Remote/Audio Mode, Wake Lock, Voice, Bluetooth HID, Swap, Settings, Fullscreen) -->
     <div class="flex items-center gap-1.5">
+      <!-- Remote / Selfie Clicker Mode Toggle -->
+      <button id="btn-remote-mode" onclick="toggleRemoteCaptureMode()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Bluetooth Remote / Selfie Clicker Mode">
+        <span id="remote-mode-dot" class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
+        <span id="remote-mode-text" class="hidden sm:inline">Remote Mode</span>
+      </button>
+
       <!-- Screen Wake Lock Toggle -->
       <button id="btn-wakelock" onclick="toggleWakeLock()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Screen Wake Lock: Keep Screen ON">
         <span id="wakelock-icon" class="w-2.5 h-2.5 rounded-full bg-neutral-500 inline-block"></span>
-        <span id="wakelock-text" class="hidden sm:inline">Wake Lock</span>
+        <span id="wakelock-text" class="hidden md:inline">Wake Lock</span>
       </button>
 
       <!-- Web Speech Announcer Toggle -->
@@ -134,7 +154,7 @@
         </svg>
       </button>
 
-      <!-- Bluetooth HID Mapping Modal Open -->
+      <!-- Bluetooth HID / Remote Mapping Modal Open -->
       <button onclick="openKeymapModal()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-cyan-400 hover:text-cyan-300 transition active:scale-95" title="Bluetooth Remote / Keypad Mapping">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v18l7-5-7-4 7-4-7-5z M9 12h7"/>
@@ -192,7 +212,6 @@
   </div>
 
   <!-- MAIN SCOREBOARD ARENA -->
-  <!-- Flex direction handles Landscape (row) vs Portrait (col) -->
   <main id="scoreboard-container" class="flex-1 w-full h-full flex flex-col md:flex-row overflow-hidden relative">
 
     <!-- TEAM 1 (Left in landscape / Top in portrait) -->
@@ -227,7 +246,7 @@
           0
         </div>
         <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
-          Tap = +1 &nbsp;|&nbsp; Rapid Double Tap = -1
+          Tap / Remote = +1 &nbsp;|&nbsp; Rapid Double Tap = -1
         </div>
       </div>
 
@@ -239,8 +258,8 @@
         </button>
 
         <!-- Remote Key Hint Badge -->
-        <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono">
-          Key: <span id="hint-key-team1" class="text-yellow-400 font-bold">Button 1</span>
+        <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
+          <span id="hint-key-team1" class="text-yellow-400 font-bold">Vol Up / Btn 1</span>
         </div>
 
         <!-- Increment Button -->
@@ -282,7 +301,7 @@
           0
         </div>
         <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
-          Tap = +1 &nbsp;|&nbsp; Rapid Double Tap = -1
+          Tap / Remote = +1 &nbsp;|&nbsp; Rapid Double Tap = -1
         </div>
       </div>
 
@@ -294,8 +313,8 @@
         </button>
 
         <!-- Remote Key Hint Badge -->
-        <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono">
-          Key: <span id="hint-key-team2" class="text-cyan-400 font-bold">Button 2</span>
+        <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
+          <span id="hint-key-team2" class="text-cyan-400 font-bold">Vol Down / Btn 2</span>
         </div>
 
         <!-- Increment Button -->
@@ -334,59 +353,82 @@
 
   <!-- ==================== MODALS ==================== -->
 
-  <!-- 1. BLUETOOTH HID KEY MAPPING MODAL -->
-  <div id="modal-keymap" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-neutral-900 border-2 border-cyan-400/80 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl text-white">
+  <!-- 1. BLUETOOTH REMOTE / MEDIA / HID KEY MAPPING MODAL -->
+  <div id="modal-keymap" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-neutral-900 border-2 border-cyan-400/80 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl text-white my-auto max-h-[90vh] overflow-y-auto no-scrollbar">
       <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
         <div class="flex items-center gap-2">
           <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v18l7-5-7-4 7-4-7-5z M9 12h7"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
           </svg>
-          <h3 class="text-xl font-black uppercase tracking-wider text-cyan-400">Bluetooth HID Remote Mapping</h3>
+          <h3 class="text-xl font-black uppercase tracking-wider text-cyan-400">Remote & Volume Clicker Setup</h3>
         </div>
         <button onclick="closeKeymapModal()" class="text-neutral-400 hover:text-white text-2xl font-black">✕</button>
       </div>
 
-      <p class="text-xs sm:text-sm text-neutral-300 mb-4 leading-relaxed">
-        Connect any Bluetooth selfie button, clicker, presentation remote, or keyboard. 
-        Click <strong class="text-cyan-300">"Record Button"</strong> and press your clicker to capture its <code class="bg-black px-1.5 py-0.5 rounded text-yellow-300 font-mono text-xs">event.code</code>.
-      </p>
+      <!-- Quick Audio Driver / Remote Capture Status Card -->
+      <div class="p-3.5 bg-cyan-950/40 rounded-xl border border-cyan-500/40 mb-4 flex items-center justify-between gap-3">
+        <div>
+          <div class="text-xs font-black uppercase text-cyan-300 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            Media & Volume Interception
+          </div>
+          <p class="text-[11px] text-neutral-300 mt-0.5">
+            Plays silent background audio to capture mobile Bluetooth selfie/volume buttons.
+          </p>
+        </div>
+        <button id="modal-btn-audio-driver" onclick="toggleRemoteCaptureMode()" class="px-3 py-1.5 bg-cyan-400 text-black font-black text-xs uppercase rounded-lg shadow whitespace-nowrap">
+          Active
+        </button>
+      </div>
 
       <!-- Key Mapping Controls -->
-      <div class="space-y-3.5 mb-5">
+      <div class="space-y-3 mb-4">
         <!-- Team A Button -->
-        <div class="p-3.5 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
+        <div class="p-3 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
           <div>
-            <div class="text-xs uppercase font-black text-yellow-400" id="keymap-label-team1">Button 1 (Team A)</div>
-            <div class="text-xs text-neutral-400 font-mono mt-0.5">
-              Mapped Code: <span id="keymap-code-team1" class="text-yellow-300 font-bold bg-neutral-800 px-2 py-0.5 rounded">ArrowLeft</span>
+            <div class="text-xs uppercase font-black text-yellow-400" id="keymap-label-team1">Team A Trigger</div>
+            <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
+              Mapped: <span id="keymap-code-team1" class="text-yellow-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">VolumeUp / KeyA</span>
             </div>
           </div>
-          <button id="btn-record-team1" onclick="startKeyRecording('team1')" class="px-3.5 py-2 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
-            Record Key
+          <button id="btn-record-team1" onclick="startKeyRecording('team1')" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
+            Record Trigger
           </button>
         </div>
 
         <!-- Team B Button -->
-        <div class="p-3.5 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
+        <div class="p-3 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
           <div>
-            <div class="text-xs uppercase font-black text-cyan-400" id="keymap-label-team2">Button 2 (Team B)</div>
-            <div class="text-xs text-neutral-400 font-mono mt-0.5">
-              Mapped Code: <span id="keymap-code-team2" class="text-cyan-300 font-bold bg-neutral-800 px-2 py-0.5 rounded">ArrowRight</span>
+            <div class="text-xs uppercase font-black text-cyan-400" id="keymap-label-team2">Team B Trigger</div>
+            <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
+              Mapped: <span id="keymap-code-team2" class="text-cyan-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">VolumeDown / KeyB</span>
             </div>
           </div>
-          <button id="btn-record-team2" onclick="startKeyRecording('team2')" class="px-3.5 py-2 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
-            Record Key
+          <button id="btn-record-team2" onclick="startKeyRecording('team2')" class="px-3 py-1.5 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
+            Record Trigger
           </button>
         </div>
       </div>
 
-      <!-- Live Key Press Testing Box -->
-      <div class="p-3 bg-neutral-950 rounded-xl border border-dashed border-neutral-700 mb-5 text-center">
-        <div class="text-[11px] uppercase tracking-wider text-neutral-400 font-bold mb-1">Live Key Test Area</div>
-        <div id="key-test-feedback" class="text-sm font-mono font-bold text-neutral-300 py-1">
-          Press any key on your clicker to test...
+      <!-- Live Key & Remote Diagnostics Area -->
+      <div class="p-3 bg-neutral-950 rounded-xl border border-dashed border-neutral-700 mb-4 text-center">
+        <div class="text-[10px] uppercase tracking-wider text-neutral-400 font-bold mb-1">Live Clicker Detector</div>
+        <div id="key-test-feedback" class="text-xs font-mono font-bold text-neutral-300 py-1">
+          Click your Bluetooth remote buttons to test...
         </div>
+      </div>
+
+      <!-- How to fix your specific remote info accordion -->
+      <div class="text-xs bg-neutral-800/60 p-3 rounded-xl border border-neutral-700/60 space-y-2 mb-4">
+        <div class="font-bold text-white uppercase text-[11px] flex items-center gap-1">
+          <span>💡</span> <span>Remote Tips for Phones & Tablets:</span>
+        </div>
+        <ul class="text-neutral-300 space-y-1 text-[11px] list-disc list-inside">
+          <li><strong>Bluetooth Selfie Clickers (AB Shutter)</strong>: Keep <em>Remote Mode</em> ON. Button 1 triggers Team A (VolumeUp / Next), Button 2 triggers Team B (VolumeDown / Prev / Enter).</li>
+          <li><strong>Mini Gamepad Remotes (VR / 8BitDo)</strong>: If your clicker has a physical switch (Key/Game), switch to <em>Game mode</em>. The app uses the Gamepad API directly with 0ms lag!</li>
+          <li><strong>Add to Home Screen (PWA)</strong>: On iOS Safari or Android Chrome, tap <em>Share → Add to Home Screen</em> to run full screen with maximum button access.</li>
+        </ul>
       </div>
 
       <!-- Modal Footer -->
@@ -464,28 +506,29 @@
        BEACH VOLLEYBALL SCOREBOARD - CORE STATE & ENGINE
        ========================================================================== */
 
-    const STATE_KEY = 'vb_scoreboard_state_v1';
-    const KEYMAP_KEY = 'vb_scoreboard_keymap_v1';
+    const STATE_KEY = 'vb_scoreboard_state_v2';
+    const KEYMAP_KEY = 'vb_scoreboard_keymap_v2';
 
-    // Default Application State
+    // Application State
     let state = {
       team1: { name: 'TEAM A', score: 0, sets: 0 },
       team2: { name: 'TEAM B', score: 0, sets: 0 },
-      server: 'team1', // 'team1' or 'team2'
+      server: 'team1',
       currentSet: 1,
       targetPoints: 21,
       switchInterval: 7,
-      isSwapped: false, // Visual swap of court sides
+      isSwapped: false,
       voiceEnabled: true,
       wakeLockEnabled: false,
+      remoteCaptureActive: true,
       theme: 'neon',
       setHistory: [],
     };
 
-    // Default Keymap Configuration
+    // Default Keymap & Triggers
     let keymap = {
-      team1: 'ArrowLeft',  // Button 1 default
-      team2: 'ArrowRight', // Button 2 default
+      team1: ['AudioVolumeUp', 'VolumeUp', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'MediaTrackNext', 'MediaPreviousTrack'],
+      team2: ['AudioVolumeDown', 'VolumeDown', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'MediaPlayPause', 'Enter', 'Space'],
     };
 
     // Double-Click Scoring Logic Timers (within 400ms)
@@ -499,8 +542,14 @@
     // Wake Lock instance
     let wakeLockSentinel = null;
 
-    // Key recording state
+    // Key recording target in modal
     let recordingTarget = null;
+
+    // Audio Driver & MediaSession State
+    let isAudioDriverRunning = false;
+
+    // Gamepad state
+    let lastGamepadButtonState = {};
 
     /* ==========================================================================
        INITIALIZATION & STORAGE
@@ -511,9 +560,25 @@
       loadSavedKeymap();
       renderUI();
       setupKeyListeners();
+      setupMediaSession();
+      setupGamepadPolling();
       setupVisibilityListener();
+      setupVolumeChangeListener();
 
-      // Check if Wake Lock is supported
+      // Start silent audio driver on first user touch/click anywhere to satisfy browser autoplay policy
+      const startAudioOnce = () => {
+        if (state.remoteCaptureActive && !isAudioDriverRunning) {
+          startSilentAudioDriver();
+        }
+        window.removeEventListener('click', startAudioOnce);
+        window.removeEventListener('keydown', startAudioOnce);
+        window.removeEventListener('touchstart', startAudioOnce);
+      };
+      window.addEventListener('click', startAudioOnce);
+      window.addEventListener('keydown', startAudioOnce);
+      window.addEventListener('touchstart', startAudioOnce);
+
+      // Check Wake Lock support
       if (!('wakeLock' in navigator)) {
         const btnWake = document.getElementById('btn-wakelock');
         if (btnWake) btnWake.title = "Screen Wake Lock API not supported on this browser";
@@ -532,8 +597,7 @@
       try {
         const saved = localStorage.getItem(STATE_KEY);
         if (saved) {
-          const parsed = JSON.parse(saved);
-          state = { ...state, ...parsed };
+          state = { ...state, ...JSON.parse(saved) };
         }
       } catch (e) {
         console.warn('Storage load failed:', e);
@@ -560,14 +624,179 @@
     }
 
     /* ==========================================================================
+       MEDIA SESSION API & SILENT AUDIO DRIVER (SOLVES VOLUME / SELFIE REMOTES)
+       ========================================================================== */
+
+    function startSilentAudioDriver() {
+      const audio = document.getElementById('silent-audio-driver');
+      if (audio) {
+        audio.play().then(() => {
+          isAudioDriverRunning = true;
+          updateRemoteModeUI();
+          setupMediaSession();
+        }).catch(err => {
+          console.warn("Silent audio driver autoplay waiting for user interaction:", err);
+        });
+      }
+    }
+
+    function stopSilentAudioDriver() {
+      const audio = document.getElementById('silent-audio-driver');
+      if (audio) {
+        audio.pause();
+        isAudioDriverRunning = false;
+        updateRemoteModeUI();
+      }
+    }
+
+    function toggleRemoteCaptureMode() {
+      state.remoteCaptureActive = !state.remoteCaptureActive;
+      if (state.remoteCaptureActive) {
+        startSilentAudioDriver();
+        showToast("Remote Mode ACTIVE: Volume/Media buttons captured");
+      } else {
+        stopSilentAudioDriver();
+        showToast("Remote Mode OFF");
+      }
+      saveState();
+      updateRemoteModeUI();
+    }
+
+    function updateRemoteModeUI() {
+      const dot = document.getElementById('remote-mode-dot');
+      const text = document.getElementById('remote-mode-text');
+      const btn = document.getElementById('btn-remote-mode');
+      const modalBtn = document.getElementById('modal-btn-audio-driver');
+
+      if (state.remoteCaptureActive && isAudioDriverRunning) {
+        if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block shadow-[0_0_8px_#00f0ff]";
+        if (text) text.innerText = "Remote ON";
+        if (btn) btn.className = "px-2.5 py-1.5 rounded bg-neutral-800 border border-cyan-400 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95";
+        if (modalBtn) {
+          modalBtn.innerText = "Active";
+          modalBtn.className = "px-3 py-1.5 bg-cyan-400 text-black font-black text-xs uppercase rounded-lg shadow whitespace-nowrap";
+        }
+      } else {
+        if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-neutral-500 inline-block";
+        if (text) text.innerText = "Remote Mode";
+        if (btn) btn.className = "px-2.5 py-1.5 rounded bg-neutral-800 border border-neutral-700 text-neutral-400 flex items-center gap-1 text-xs font-bold transition active:scale-95";
+        if (modalBtn) {
+          modalBtn.innerText = "Enable";
+          modalBtn.className = "px-3 py-1.5 bg-neutral-800 text-white font-black text-xs uppercase rounded-lg shadow whitespace-nowrap border border-neutral-700";
+        }
+      }
+    }
+
+    function setupMediaSession() {
+      if (!('mediaSession' in navigator)) return;
+
+      // Provide metadata so the OS knows this is an active interactive session
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: 'Beach Volleyball Scoreboard',
+        artist: 'Scorekeeper Remote Controller',
+        album: 'Live Match',
+        artwork: [{ src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🏐</text></svg>', sizes: '96x96', type: 'image/svg+xml' }]
+      });
+
+      // Map headphone / selfie clicker buttons
+      const handleMediaAction = (team, actionName) => {
+        logRemoteDiagnostic(`MediaSession: [${actionName}] → ${state[team].name}`);
+        triggerTeamScoring(team);
+      };
+
+      try {
+        navigator.mediaSession.setActionHandler('previoustrack', () => handleMediaAction('team1', 'Previous Track'));
+        navigator.mediaSession.setActionHandler('nexttrack', () => handleMediaAction('team2', 'Next Track'));
+        navigator.mediaSession.setActionHandler('seekbackward', () => handleMediaAction('team1', 'Seek Backward'));
+        navigator.mediaSession.setActionHandler('seekforward', () => handleMediaAction('team2', 'Seek Forward'));
+        navigator.mediaSession.setActionHandler('play', () => {
+          handleMediaAction('team1', 'Play Button');
+          const audio = document.getElementById('silent-audio-driver');
+          if (audio && audio.paused) audio.play();
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          handleMediaAction('team2', 'Pause Button');
+          const audio = document.getElementById('silent-audio-driver');
+          if (audio && audio.paused) audio.play();
+        });
+      } catch (e) {
+        console.warn("MediaSession action handler error:", e);
+      }
+    }
+
+    /* ==========================================================================
+       HARDWARE VOLUME CHANGE DETECTOR (FALLBACK FOR MOBILE BROWSERS)
+       ========================================================================== */
+
+    function setupVolumeChangeListener() {
+      const audio = document.getElementById('silent-audio-driver');
+      if (!audio) return;
+
+      let lastVolume = audio.volume;
+      audio.addEventListener('volumechange', () => {
+        const currentVol = audio.volume;
+        if (currentVol > lastVolume) {
+          logRemoteDiagnostic(`Volume Up Event Detected → ${state.team1.name}`);
+          triggerTeamScoring('team1');
+        } else if (currentVol < lastVolume) {
+          logRemoteDiagnostic(`Volume Down Event Detected → ${state.team2.name}`);
+          triggerTeamScoring('team2');
+        }
+        lastVolume = currentVol;
+        // Keep volume at mid-level so it can detect both directions
+        if (currentVol < 0.2 || currentVol > 0.8) {
+          audio.volume = 0.5;
+          lastVolume = 0.5;
+        }
+      });
+    }
+
+    /* ==========================================================================
+       GAMEPAD API (FOR VR / 8BITDO / MINI CLICKERS IN GAME MODE)
+       ========================================================================== */
+
+    function setupGamepadPolling() {
+      function pollGamepads() {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        for (let i = 0; i < gamepads.length; i++) {
+          const gp = gamepads[i];
+          if (!gp) continue;
+
+          gp.buttons.forEach((btn, btnIdx) => {
+            const isPressed = btn.pressed || btn.value > 0.5;
+            const prev = lastGamepadButtonState[`${i}_${btnIdx}`] || false;
+
+            if (isPressed && !prev) {
+              // Button newly pressed!
+              logRemoteDiagnostic(`Gamepad ${i} Button ${btnIdx} Pressed`);
+              if (recordingTarget) {
+                const codeName = `Gamepad_B${btnIdx}`;
+                if (!keymap[recordingTarget].includes(codeName)) {
+                  keymap[recordingTarget].push(codeName);
+                  saveKeymap();
+                }
+                stopKeyRecording();
+                renderUI();
+              } else {
+                if (btnIdx === 0 || btnIdx === 2 || btnIdx === 4 || btnIdx === 14) {
+                  triggerTeamScoring('team1');
+                } else if (btnIdx === 1 || btnIdx === 3 || btnIdx === 5 || btnIdx === 15) {
+                  triggerTeamScoring('team2');
+                }
+              }
+            }
+            lastGamepadButtonState[`${i}_${btnIdx}`] = isPressed;
+          });
+        }
+        requestAnimationFrame(pollGamepads);
+      }
+      requestAnimationFrame(pollGamepads);
+    }
+
+    /* ==========================================================================
        SCORING LOGIC: SINGLE CLICK (+1) & RAPID DOUBLE CLICK (-1 UNDO)
        ========================================================================== */
 
-    /**
-     * Handles scoring trigger from Bluetooth HID key press or screen click
-     * - Single click: waits 400ms, then awards +1 point
-     * - Double click (within 400ms): cancels pending +1, decrements score by 1
-     */
     function triggerTeamScoring(team) {
       const now = performance.now();
       const timeSinceLast = now - lastClickTimes[team];
@@ -578,12 +807,10 @@
         clickTimers[team] = null;
         lastClickTimes[team] = 0;
 
-        // Decrement score (-1)
         modifyScore(team, -1, 'double-click');
         showToast(`Undo: -1 for ${state[team].name}`);
         flashCardFeedback(team, 'red');
       } else {
-        // First click! Set timer for single click (+1)
         lastClickTimes[team] = now;
         flashCardFeedback(team, 'pop');
 
@@ -601,14 +828,12 @@
 
     function incrementScore(team, event) {
       if (event) event.stopPropagation();
-      // Direct explicit manual +1 button press (immediate)
       modifyScore(team, 1, 'manual-add');
       flashCardFeedback(team, 'pop');
     }
 
     function decrementScore(team, event) {
       if (event) event.stopPropagation();
-      // Direct explicit manual -1 button press
       modifyScore(team, -1, 'manual-sub');
       flashCardFeedback(team, 'red');
     }
@@ -622,29 +847,22 @@
         return;
       }
 
-      // Save to undo stack
       historyStack.push(JSON.stringify(state));
       if (historyStack.length > 30) historyStack.shift();
 
       state[team].score = newScore;
 
-      // When a team scores (+1), they earn the serve
       if (delta > 0) {
         state.server = team;
       }
 
-      // Haptic feedback for mobile
       if ('vibrate' in navigator) {
         navigator.vibrate(delta > 0 ? 40 : [30, 40, 30]);
       }
 
       saveState();
       renderUI();
-
-      // Announce score aloud
       announceScore();
-
-      // Check Beach Volleyball side switch rule
       checkSideSwitchBanner();
     }
 
@@ -669,7 +887,6 @@
       if (!state.voiceEnabled) return;
       if (!('speechSynthesis' in window)) return;
 
-      // Cancel any ongoing speech to remain fast and responsive
       window.speechSynthesis.cancel();
 
       const serverTeam = state.server;
@@ -680,18 +897,14 @@
       const totalPoints = state.team1.score + state.team2.score;
 
       let announcement = "";
-
-      // Check if side switch on 7s
       const isSwitchPoint = state.switchInterval > 0 && totalPoints > 0 && (totalPoints % state.switchInterval === 0);
 
       if (serverScore === receiverScore) {
         announcement = `${serverScore} all.`;
       } else {
-        // e.g. "12 serving 9"
         announcement = `${serverScore} serving ${receiverScore}.`;
       }
 
-      // Prepend Switch sides if applicable
       if (isSwitchPoint) {
         announcement = `Switch sides! ${announcement}`;
       } else if (isSetPoint()) {
@@ -699,7 +912,7 @@
       }
 
       const utterance = new SpeechSynthesisUtterance(announcement);
-      utterance.rate = 1.05; // Slightly faster for sports tempo
+      utterance.rate = 1.05;
       utterance.pitch = 1.0;
       utterance.lang = 'en-US';
 
@@ -781,15 +994,19 @@
       const btn = document.getElementById('btn-wakelock');
 
       if (state.wakeLockEnabled) {
-        icon.className = "w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block";
-        text.innerText = "Awake ON";
-        btn.classList.add('border-green-500/80', 'text-green-300');
-        btn.classList.remove('border-neutral-700', 'text-neutral-300');
+        if (icon) icon.className = "w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block";
+        if (text) text.innerText = "Awake ON";
+        if (btn) {
+          btn.classList.add('border-green-500/80', 'text-green-300');
+          btn.classList.remove('border-neutral-700', 'text-neutral-300');
+        }
       } else {
-        icon.className = "w-2.5 h-2.5 rounded-full bg-neutral-500 inline-block";
-        text.innerText = "Wake Lock";
-        btn.classList.remove('border-green-500/80', 'text-green-300');
-        btn.classList.add('border-neutral-700', 'text-neutral-300');
+        if (icon) icon.className = "w-2.5 h-2.5 rounded-full bg-neutral-500 inline-block";
+        if (text) text.innerText = "Wake Lock";
+        if (btn) {
+          btn.classList.remove('border-green-500/80', 'text-green-300');
+          btn.classList.add('border-neutral-700', 'text-neutral-300');
+        }
       }
     }
 
@@ -815,65 +1032,74 @@
     }
 
     /* ==========================================================================
-       BLUETOOTH HID KEYBOARD LISTENER & MAPPING MODAL
+       KEYBOARD & VOLUME KEY INTERCEPTION ENGINE
        ========================================================================== */
 
     function setupKeyListeners() {
-      window.addEventListener('keydown', (e) => {
-        // If user is recording a new key mapping in modal
+      const interceptHandler = (e) => {
+        const code = e.code || e.key;
+
+        // Diagnostic log
+        logRemoteDiagnostic(`Key: [${code}] (Key: ${e.key})`);
+
+        // If recording key mapping in modal
         if (recordingTarget) {
           e.preventDefault();
-          const capturedCode = e.code || e.key;
-          keymap[recordingTarget] = capturedCode;
-          saveKeymap();
+          e.stopImmediatePropagation();
 
-          const codeEl = document.getElementById(`keymap-code-${recordingTarget}`);
-          if (codeEl) codeEl.innerText = capturedCode;
-
-          const testFeedback = document.getElementById('key-test-feedback');
-          if (testFeedback) testFeedback.innerText = `Captured: ${capturedCode} for ${recordingTarget === 'team1' ? state.team1.name : state.team2.name}!`;
+          if (!keymap[recordingTarget].includes(code)) {
+            keymap[recordingTarget].push(code);
+            saveKeymap();
+          }
 
           stopKeyRecording();
           renderUI();
           return;
         }
 
-        // Live testing inside modal
-        const modal = document.getElementById('modal-keymap');
-        if (!modal.classList.contains('hidden')) {
-          const testFeedback = document.getElementById('key-test-feedback');
-          if (testFeedback) {
-            let matched = "None";
-            if (e.code === keymap.team1 || e.key === keymap.team1) matched = `${state.team1.name} (Button 1)`;
-            if (e.code === keymap.team2 || e.key === keymap.team2) matched = `${state.team2.name} (Button 2)`;
-            testFeedback.innerHTML = `<span class="text-yellow-400">Detected:</span> <code class="bg-neutral-800 px-2 py-0.5 rounded text-white">${e.code}</code> → <strong>${matched}</strong>`;
-          }
-        }
+        // Check if key matches Team 1
+        const isTeam1 = keymap.team1.includes(code) || keymap.team1.includes(e.key);
+        // Check if key matches Team 2
+        const isTeam2 = keymap.team2.includes(code) || keymap.team2.includes(e.key);
 
-        // Prevent standard scroll on arrow keys or space during game
-        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'PageUp', 'PageDown'].includes(e.code)) {
+        if (isTeam1 || isTeam2 || ['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'PageUp', 'PageDown'].includes(code)) {
+          // Intercept and prevent OS volume changes or scrolling
           e.preventDefault();
+          e.stopImmediatePropagation();
         }
 
-        // Trigger Score Action based on keymap
-        if (e.code === keymap.team1 || e.key === keymap.team1) {
+        if (isTeam1) {
           triggerTeamScoring('team1');
-        } else if (e.code === keymap.team2 || e.key === keymap.team2) {
+        } else if (isTeam2) {
           triggerTeamScoring('team2');
-        } else if (e.code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
+        } else if (code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
           undoGlobal();
-        } else if (e.code === 'KeyS') {
+        } else if (code === 'KeyS') {
           swapSides();
         }
-      });
+      };
+
+      window.addEventListener('keydown', interceptHandler, { capture: true, passive: false });
+      window.addEventListener('keyup', (e) => {
+        if (['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown'].includes(e.code || e.key)) {
+          e.preventDefault();
+        }
+      }, { capture: true, passive: false });
+    }
+
+    function logRemoteDiagnostic(msg) {
+      const testFeedback = document.getElementById('key-test-feedback');
+      if (testFeedback) {
+        testFeedback.innerHTML = `<span class="text-cyan-300 font-bold">⚡ Detected:</span> ${msg}`;
+      }
     }
 
     function openKeymapModal() {
-      document.getElementById('keymap-code-team1').innerText = keymap.team1;
-      document.getElementById('keymap-code-team2').innerText = keymap.team2;
-      document.getElementById('keymap-label-team1').innerText = `Button 1 (${state.team1.name})`;
-      document.getElementById('keymap-label-team2').innerText = `Button 2 (${state.team2.name})`;
+      updateKeymapDisplay();
+      document.getElementById('keymap-label-team1').innerText = `Team A Trigger (${state.team1.name})`;
+      document.getElementById('keymap-label-team2').innerText = `Team B Trigger (${state.team2.name})`;
       document.getElementById('modal-keymap').classList.remove('hidden');
+      updateRemoteModeUI();
     }
 
     function closeKeymapModal() {
@@ -881,16 +1107,21 @@
       document.getElementById('modal-keymap').classList.add('hidden');
     }
 
+    function updateKeymapDisplay() {
+      document.getElementById('keymap-code-team1').innerText = keymap.team1.slice(0, 3).join(' / ') + (keymap.team1.length > 3 ? '...' : '');
+      document.getElementById('keymap-code-team2').innerText = keymap.team2.slice(0, 3).join(' / ') + (keymap.team2.length > 3 ? '...' : '');
+    }
+
     function startKeyRecording(target) {
       recordingTarget = target;
       const btn = document.getElementById(`btn-record-${target}`);
       if (btn) {
-        btn.innerText = 'Press Clicker...';
+        btn.innerText = 'Press Button...';
         btn.classList.add('animate-pulse', 'bg-white', 'text-black');
       }
       const testFeedback = document.getElementById('key-test-feedback');
       if (testFeedback) {
-        testFeedback.innerHTML = `<span class="text-cyan-400 animate-pulse font-bold">Listening... Press any button on your Bluetooth remote now!</span>`;
+        testFeedback.innerHTML = `<span class="text-cyan-400 animate-pulse font-bold">Listening... Click your Bluetooth remote button or volume key now!</span>`;
       }
     }
 
@@ -898,19 +1129,22 @@
       if (recordingTarget) {
         const btn = document.getElementById(`btn-record-${recordingTarget}`);
         if (btn) {
-          btn.innerText = 'Record Key';
+          btn.innerText = 'Record Trigger';
           btn.classList.remove('animate-pulse', 'bg-white', 'text-black');
         }
       }
       recordingTarget = null;
+      updateKeymapDisplay();
     }
 
     function resetKeymapDefaults() {
-      keymap = { team1: 'ArrowLeft', team2: 'ArrowRight' };
+      keymap = {
+        team1: ['AudioVolumeUp', 'VolumeUp', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'MediaTrackNext', 'MediaPreviousTrack'],
+        team2: ['AudioVolumeDown', 'VolumeDown', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'MediaPlayPause', 'Enter', 'Space'],
+      };
       saveKeymap();
-      document.getElementById('keymap-code-team1').innerText = keymap.team1;
-      document.getElementById('keymap-code-team2').innerText = keymap.team2;
-      showToast("Keymap reset to defaults");
+      updateKeymapDisplay();
+      showToast("Keymap reset to standard defaults");
       renderUI();
     }
 
@@ -919,41 +1153,32 @@
        ========================================================================== */
 
     function renderUI() {
-      // Score numbers
       const score1El = document.getElementById('score-team1');
       const score2El = document.getElementById('score-team2');
       score1El.innerText = state.team1.score;
       score2El.innerText = state.team2.score;
 
-      // Team names
       document.getElementById('name-team1').innerText = state.team1.name;
       document.getElementById('name-team2').innerText = state.team2.name;
 
-      // Sets won
       document.getElementById('sets-team1').innerText = state.team1.sets;
       document.getElementById('sets-team2').innerText = state.team2.sets;
 
-      // Set indicator
       document.getElementById('set-indicator-text').innerText = `SET ${state.currentSet}`;
 
-      // Total points
       const total = state.team1.score + state.team2.score;
       document.getElementById('total-points-badge').innerText = total;
 
-      // Serving badges
       updateServeBadges();
 
-      // Key hint badges
-      document.getElementById('hint-key-team1').innerText = keymap.team1;
-      document.getElementById('hint-key-team2').innerText = keymap.team2;
+      document.getElementById('hint-key-team1').innerText = keymap.team1[0] || 'Btn 1';
+      document.getElementById('hint-key-team2').innerText = keymap.team2[0] || 'Btn 2';
 
-      // Voice Icon status
       document.getElementById('voice-icon-on').classList.toggle('hidden', !state.voiceEnabled);
       document.getElementById('voice-icon-off').classList.toggle('hidden', state.voiceEnabled);
       const voiceCheck = document.getElementById('check-voice-announcements');
       if (voiceCheck) voiceCheck.checked = state.voiceEnabled;
 
-      // Match / Set Point status
       const matchBadge = document.getElementById('match-status-badge');
       if (isSetPoint()) {
         matchBadge.classList.remove('hidden');
@@ -962,16 +1187,10 @@
         matchBadge.classList.add('hidden');
       }
 
-      // Render Set History
       renderSetHistory();
-
-      // Update wake lock status
       updateWakeLockUI();
-
-      // Apply Layout Swap
+      updateRemoteModeUI();
       applyLayoutSwap();
-
-      // Apply Theme
       applyTheme();
     }
 
@@ -1021,7 +1240,6 @@
     }
 
     function isMatchPoint() {
-      // In best 2 of 3, team with 1 set won reaching set point has match point
       if (isSetPoint()) {
         if (state.team1.sets === 1 && state.team1.score > state.team2.score) return true;
         if (state.team2.sets === 1 && state.team2.score > state.team1.score) return true;
@@ -1045,7 +1263,7 @@
       const glowEl = document.getElementById(`glow-${team}`);
       if (scoreEl) {
         scoreEl.classList.remove('animate-scorePop');
-        void scoreEl.offsetWidth; // Trigger reflow
+        void scoreEl.offsetWidth;
         scoreEl.classList.add('animate-scorePop');
       }
       if (glowEl) {
@@ -1083,12 +1301,10 @@
         winner: winner,
       });
 
-      // Advance to next set
       state.currentSet += 1;
       state.team1.score = 0;
       state.team2.score = 0;
 
-      // In set 3 (tiebreak), default target is 15 points
       if (state.currentSet === 3) {
         state.targetPoints = 15;
         state.switchInterval = 5;
@@ -1166,7 +1382,6 @@
     }
 
     function updateSettingsButtons() {
-      // Target points buttons
       [15, 21, 25].forEach(pts => {
         const btn = document.getElementById(`target-btn-${pts}`);
         if (btn) {
@@ -1178,7 +1393,6 @@
         }
       });
 
-      // Switch interval buttons
       [7, 5, 0].forEach(i => {
         const btn = document.getElementById(`switch-btn-${i}`);
         if (btn) {
@@ -1203,7 +1417,6 @@
       if (select) select.value = state.theme;
 
       if (state.theme === 'solar') {
-        // High Noon Sunlight Mode: Pure white background, pitch black and saturated borders
         body.classList.remove('bg-black');
         body.classList.add('bg-white');
       } else {
@@ -1239,7 +1452,6 @@
       }
     }
 
-    // Initialize application on DOM ready
     window.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
