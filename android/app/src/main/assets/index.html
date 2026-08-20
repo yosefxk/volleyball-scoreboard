@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Beach Volleyball Scoreboard</title>
+  
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Scoreboard">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: High-impact athletic typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,700;0,900;1,900&family=Oswald:wght@700&family=Teko:wght@700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            score: ['"Teko"', '"Chakra Petch"', 'Impact', 'sans-serif'],
+            display: ['"Chakra Petch"', '"Oswald"', 'sans-serif'],
+          },
+          colors: {
+            neonYellow: '#FAFF00',
+            neonCyan: '#00F0FF',
+            neonOrange: '#FF5500',
+            neonMagenta: '#FF0055',
+            neonGreen: '#00FF66',
+          },
+          keyframes: {
+            bannerPulse: {
+              '0%, 100%': { transform: 'scale(1)', filter: 'brightness(1)' },
+              '50%': { transform: 'scale(1.02)', filter: 'brightness(1.2)' },
+            },
+            scorePop: {
+              '0%': { transform: 'scale(0.88)' },
+              '50%': { transform: 'scale(1.08)' },
+              '100%': { transform: 'scale(1)' },
+            },
+            flashRed: {
+              '0%, 100%': { backgroundColor: 'transparent' },
+              '50%': { backgroundColor: 'rgba(239, 68, 68, 0.4)' },
+            }
+          },
+          animation: {
+            bannerPulse: 'bannerPulse 1.2s infinite ease-in-out',
+            scorePop: 'scorePop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            flashRed: 'flashRed 0.4s ease-out',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    .huge-score {
+      font-size: min(32vw, 36vh);
+      line-height: 0.85;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    }
+    
+    @media (orientation: landscape) {
+      .huge-score {
+        font-size: min(24vw, 55vh);
+      }
+    }
+
+    .text-stroke-black {
+      -webkit-text-stroke: 3px #000;
+    }
+    .text-stroke-thick {
+      -webkit-text-stroke: 6px #000;
+    }
+    
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="h-full w-full bg-black text-white font-display overflow-hidden flex flex-col justify-between select-none">
+
+  <!-- HIDDEN AUDIO ELEMENT FOR MEDIA SESSION API -->
+  <audio id="silent-audio-driver" loop preload="auto">
+    <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" type="audio/wav">
+  </audio>
+
+  <!-- TOP APP BAR -->
+  <header class="w-full bg-neutral-950/90 border-b-2 border-neutral-800 z-30 px-3 py-2 flex items-center justify-between gap-2">
+    <!-- Left: Match Info & Set Counter -->
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-400/20 text-yellow-300 border border-yellow-400/40 rounded font-black text-xs uppercase tracking-wider">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/></svg>
+        <span id="set-indicator-text">SET 1</span>
+      </span>
+      <div id="set-history-container" class="hidden sm:flex items-center gap-1.5 text-xs text-neutral-400 font-mono">
+        <!-- Set History Badges -->
+      </div>
+    </div>
+
+    <!-- Center: Total Points / Next Switch Tracker -->
+    <div class="flex items-center gap-2 text-xs uppercase tracking-widest font-black text-neutral-300">
+      <span class="hidden md:inline text-neutral-400">Total:</span>
+      <span id="total-points-badge" class="px-2 py-0.5 bg-neutral-800 rounded text-white font-mono text-sm">0</span>
+      <span class="hidden sm:inline text-neutral-500 text-[10px]">(Switch at 7s)</span>
+    </div>
+
+    <!-- Right: Quick Controls -->
+    <div class="flex items-center gap-1.5">
+      <!-- Direct Bluetooth Pairing Button -->
+      <button id="btn-bluetooth-pair" onclick="requestDirectBluetooth()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-cyan-400 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Pair Bluetooth Clicker Directly">
+        <span id="ble-status-dot" class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
+        <span id="ble-btn-text" class="hidden sm:inline">Pair Remote</span>
+      </button>
+
+      <!-- Screen Wake Lock Toggle -->
+      <button id="btn-wakelock" onclick="toggleWakeLock()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Screen Wake Lock: Keep Screen ON">
+        <span id="wakelock-icon" class="w-2.5 h-2.5 rounded-full bg-neutral-500 inline-block"></span>
+        <span id="wakelock-text" class="hidden md:inline">Wake Lock</span>
+      </button>
+
+      <!-- Web Speech Announcer Toggle -->
+      <button id="btn-voice" onclick="toggleSpeech()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 transition active:scale-95" title="Toggle Voice Score Announcer">
+        <svg id="voice-icon-on" class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"/>
+        </svg>
+        <svg id="voice-icon-off" class="w-5 h-5 text-red-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+        </svg>
+      </button>
+
+      <!-- Swap Sides Button -->
+      <button onclick="swapSides()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-yellow-400 transition active:scale-95" title="Swap Court Sides (Layout)">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+        </svg>
+      </button>
+
+      <!-- Settings / Menu -->
+      <button onclick="openSettingsModal()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 transition active:scale-95" title="Match Settings">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </button>
+
+      <!-- Fullscreen Toggle -->
+      <button onclick="toggleFullscreen()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 transition active:scale-95" title="Toggle Fullscreen">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- SWITCH SIDES BANNER ALERT (Multiple of 7 in Beach Volleyball) -->
+  <div id="switch-banner" class="hidden fixed top-14 left-0 right-0 z-40 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-black px-4 py-3 shadow-2xl border-y-4 border-black animate-bannerPulse">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🔄</span>
+        <div>
+          <h2 class="text-xl sm:text-2xl font-black uppercase tracking-wider leading-none">SWITCH COURT SIDES!</h2>
+          <p id="switch-banner-sub" class="text-xs sm:text-sm font-bold opacity-90">Total points reach multiple of 7 (Total: 7)</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="swapSides(); dismissSwitchBanner();" class="px-3 py-1.5 bg-black text-yellow-300 font-black text-xs uppercase rounded-lg border-2 border-black hover:bg-neutral-900 shadow-md transition active:scale-95">
+          Swap Display
+        </button>
+        <button onclick="dismissSwitchBanner()" class="p-1 text-black hover:bg-black/10 rounded-full text-xl font-black">
+          ✕
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-300 bg-neutral-900/95 border-2 border-yellow-400 text-yellow-300 px-4 py-2 rounded-xl text-sm font-bold shadow-2xl tracking-wide flex items-center gap-2">
+    <span id="toast-icon">ℹ️</span>
+    <span id="toast-msg">Score updated</span>
+  </div>
+
+  <!-- LIVE EVENT DEBUG STATUS BAR -->
+  <div id="debug-status-bar" class="w-full bg-neutral-950 border-b border-neutral-800 px-3 py-1 text-[11px] font-mono text-neutral-400 flex items-center justify-between">
+    <div class="flex items-center gap-2 truncate">
+      <span id="debug-indicator" class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
+      <span id="live-debug-text">Ready. Click remote button or tap team card...</span>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <button onclick="openKeymapModal()" class="text-cyan-400 underline hover:text-cyan-300 text-[10px]">
+        Config
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN SCOREBOARD ARENA -->
+  <main id="scoreboard-container" class="flex-1 w-full h-full flex flex-col md:flex-row overflow-hidden relative">
+
+    <!-- TEAM 1 (Left in landscape / Top in portrait) -->
+    <section id="panel-team1" class="relative flex-1 flex flex-col justify-between items-center p-3 sm:p-5 border-b-4 md:border-b-0 md:border-r-4 border-black transition-colors duration-200 cursor-pointer overflow-hidden group select-none"
+             onclick="handleTeamClick('team1', event)">
+      <div id="glow-team1" class="absolute inset-0 bg-yellow-500/10 pointer-events-none transition duration-150"></div>
+      
+      <!-- Top Bar: Name & Serve Badge & Sets Won -->
+      <div class="w-full flex items-center justify-between z-10">
+        <div class="flex items-center gap-2">
+          <button id="serve-team1" onclick="setServer('team1', event)" class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-yellow-400 text-black border-yellow-300" title="Click to designate server">
+            <span class="text-sm">🏐</span>
+            <span class="hidden sm:inline">SERVE</span>
+          </button>
+          <span id="name-team1" onclick="editTeamName('team1', event)" class="text-lg sm:text-2xl font-black tracking-wider uppercase text-yellow-300 hover:text-white transition underline decoration-dotted decoration-yellow-500/50 underline-offset-4" title="Click to rename">
+            TEAM A
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5 bg-neutral-900/80 px-2.5 py-1 rounded-lg border border-neutral-700">
+          <span class="text-[10px] text-neutral-400 uppercase font-bold">Sets:</span>
+          <span id="sets-team1" class="text-lg font-black text-yellow-400 font-mono leading-none">0</span>
+        </div>
+      </div>
+
+      <!-- Center: Massive Score Display -->
+      <div class="flex-1 flex flex-col items-center justify-center my-auto z-10 w-full">
+        <div id="score-team1" class="huge-score font-score font-black text-yellow-400 text-center tracking-tighter filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+          0
+        </div>
+        <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
+          Tap / Remote = +1 &nbsp;|&nbsp; Double Tap = -1
+        </div>
+      </div>
+
+      <!-- Bottom: Manual Fine-Tuning Controls -->
+      <div class="w-full flex items-center justify-between z-10 pt-1" onclick="event.stopPropagation()">
+        <button onclick="decrementScore('team1', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-neutral-900/90 border-2 border-red-500/60 hover:border-red-500 text-red-400 text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition active:bg-red-500 active:text-white" title="Undo / Subtract 1 point">
+          −
+        </button>
+
+        <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
+          <span id="hint-key-team1" class="text-yellow-400 font-bold">Button 1</span>
+        </div>
+
+        <button onclick="incrementScore('team1', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-yellow-300" title="Add 1 point">
+          +
+        </button>
+      </div>
+    </section>
+
+    <!-- TEAM 2 (Right in landscape / Bottom in portrait) -->
+    <section id="panel-team2" class="relative flex-1 flex flex-col justify-between items-center p-3 sm:p-5 transition-colors duration-200 cursor-pointer overflow-hidden group select-none"
+             onclick="handleTeamClick('team2', event)">
+      <div id="glow-team2" class="absolute inset-0 bg-cyan-500/10 pointer-events-none transition duration-150"></div>
+
+      <!-- Top Bar: Name & Serve Badge & Sets Won -->
+      <div class="w-full flex items-center justify-between z-10">
+        <div class="flex items-center gap-2">
+          <button id="serve-team2" onclick="setServer('team2', event)" class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-400 border-neutral-700 hover:border-neutral-500" title="Click to designate server">
+            <span class="text-sm">🏐</span>
+            <span class="hidden sm:inline">SERVE</span>
+          </button>
+          <span id="name-team2" onclick="editTeamName('team2', event)" class="text-lg sm:text-2xl font-black tracking-wider uppercase text-cyan-400 hover:text-white transition underline decoration-dotted decoration-cyan-500/50 underline-offset-4" title="Click to rename">
+            TEAM B
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5 bg-neutral-900/80 px-2.5 py-1 rounded-lg border border-neutral-700">
+          <span class="text-[10px] text-neutral-400 uppercase font-bold">Sets:</span>
+          <span id="sets-team2" class="text-lg font-black text-cyan-400 font-mono leading-none">0</span>
+        </div>
+      </div>
+
+      <!-- Center: Massive Score Display -->
+      <div class="flex-1 flex flex-col items-center justify-center my-auto z-10 w-full">
+        <div id="score-team2" class="huge-score font-score font-black text-cyan-400 text-center tracking-tighter filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+          0
+        </div>
+        <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
+          Tap / Remote = +1 &nbsp;|&nbsp; Double Tap = -1
+        </div>
+      </div>
+
+      <!-- Bottom: Manual Fine-Tuning Controls -->
+      <div class="w-full flex items-center justify-between z-10 pt-1" onclick="event.stopPropagation()">
+        <button onclick="decrementScore('team2', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-neutral-900/90 border-2 border-red-500/60 hover:border-red-500 text-red-400 text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition active:bg-red-500 active:text-white" title="Undo / Subtract 1 point">
+          −
+        </button>
+
+        <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
+          <span id="hint-key-team2" class="text-cyan-400 font-bold">Button 2</span>
+        </div>
+
+        <button onclick="incrementScore('team2', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-cyan-300" title="Add 1 point">
+          +
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM STATUS & QUICK ACTION BAR -->
+  <footer class="w-full bg-neutral-950 border-t-2 border-neutral-800 z-30 px-3 py-1.5 flex items-center justify-between text-xs text-neutral-400">
+    <div class="flex items-center gap-2">
+      <button onclick="endSet()" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-white rounded font-bold border border-neutral-600 transition active:scale-95 flex items-center gap-1">
+        <span>🏆</span>
+        <span>Finish Set</span>
+      </button>
+      <button onclick="undoGlobal()" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded font-bold border border-neutral-700 transition active:scale-95 flex items-center gap-1" title="Undo last scoring action">
+        <span>↩</span>
+        <span class="hidden sm:inline">Undo</span>
+      </button>
+    </div>
+
+    <!-- Match Point / Set Point Status -->
+    <div id="match-status-badge" class="font-black tracking-wider uppercase text-yellow-400 text-xs px-2 py-0.5 rounded bg-yellow-400/10 border border-yellow-400/30 hidden">
+      SET POINT
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button onclick="promptResetMatch()" class="px-2.5 py-1 bg-red-950/60 hover:bg-red-900 text-red-300 rounded font-bold border border-red-800 transition active:scale-95">
+        Reset Match
+      </button>
+    </div>
+  </footer>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. BLUETOOTH REMOTE MAPPING & DIAGNOSTICS MODAL -->
+  <div id="modal-keymap" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-neutral-900 border-2 border-cyan-400/80 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl text-white my-auto max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+          </svg>
+          <h3 class="text-xl font-black uppercase tracking-wider text-cyan-400">Bluetooth Remote Setup</h3>
+        </div>
+        <button onclick="closeKeymapModal()" class="text-neutral-400 hover:text-white text-2xl font-black">✕</button>
+      </div>
+
+      <!-- Bluetooth Connection Status Banner -->
+      <div class="p-3.5 bg-gradient-to-r from-cyan-950/80 to-blue-950/80 rounded-xl border border-cyan-500/50 mb-4 flex items-center justify-between gap-3">
+        <div>
+          <div class="text-xs font-black uppercase text-cyan-300" id="ble-modal-status-text">Bluetooth: Ready to Pair</div>
+          <div class="text-[11px] text-neutral-300 mt-0.5" id="ble-modal-sub-text">Click below to connect directly to your AB Shutter3.</div>
+        </div>
+        <button onclick="requestDirectBluetooth()" class="px-3.5 py-2 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow active:scale-95 transition whitespace-nowrap">
+          Pair / Reconnect
+        </button>
+      </div>
+
+      <!-- Key Mapping Controls -->
+      <div class="space-y-3 mb-4">
+        <!-- Team A Button -->
+        <div class="p-3 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
+          <div>
+            <div class="text-xs uppercase font-black text-yellow-400" id="keymap-label-team1">Team A Button</div>
+            <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
+              Mapped: <span id="keymap-code-team1" class="text-yellow-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Button 1 (iOS / Enter)</span>
+            </div>
+          </div>
+          <button id="btn-record-team1" onclick="startKeyRecording('team1')" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
+            Learn Button
+          </button>
+        </div>
+
+        <!-- Team B Button -->
+        <div class="p-3 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
+          <div>
+            <div class="text-xs uppercase font-black text-cyan-400" id="keymap-label-team2">Team B Button</div>
+            <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
+              Mapped: <span id="keymap-code-team2" class="text-cyan-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Button 2 (Android / Vol)</span>
+            </div>
+          </div>
+          <button id="btn-record-team2" onclick="startKeyRecording('team2')" class="px-3 py-1.5 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
+            Learn Button
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Diagnostics Feedback Box -->
+      <div class="p-3 bg-neutral-950 rounded-xl border border-dashed border-neutral-700 mb-4 text-center">
+        <div class="text-[10px] uppercase tracking-wider text-neutral-400 font-bold mb-1">Live Clicker Signal Detector</div>
+        <div id="key-test-feedback" class="text-xs font-mono font-bold text-neutral-300 py-1">
+          Click any button on your shutter remote to test...
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800">
+        <button onclick="resetKeymapDefaults()" class="text-xs text-neutral-400 hover:text-neutral-200 underline">
+          Reset Defaults
+        </button>
+        <button onclick="closeKeymapModal()" class="px-5 py-2 bg-neutral-700 hover:bg-neutral-600 text-white font-black text-xs uppercase rounded-xl transition">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. MATCH & DISPLAY SETTINGS MODAL -->
+  <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-neutral-900 border-2 border-neutral-700 rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-2xl text-white">
+      <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
+        <h3 class="text-xl font-black uppercase tracking-wider text-white">Match Settings</h3>
+        <button onclick="closeSettingsModal()" class="text-neutral-400 hover:text-white text-2xl font-black">✕</button>
+      </div>
+
+      <div class="space-y-4 mb-6">
+        <div>
+          <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">Points to Win Set</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="setTargetPoints(21)" id="target-btn-21" class="py-2 rounded-lg font-black text-sm bg-yellow-400 text-black border-2 border-yellow-400">21 (Standard)</button>
+            <button onclick="setTargetPoints(15)" id="target-btn-15" class="py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700">15 (Tiebreak)</button>
+            <button onclick="setTargetPoints(25)" id="target-btn-25" class="py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700">25 (Indoor)</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">Court Side Switch Interval</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="setSwitchInterval(7)" id="switch-btn-7" class="py-2 rounded-lg font-black text-sm bg-yellow-400 text-black border-2 border-yellow-400">Every 7 pts</button>
+            <button onclick="setSwitchInterval(5)" id="switch-btn-5" class="py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700">Every 5 pts</button>
+            <button onclick="setSwitchInterval(0)" id="switch-btn-0" class="py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700">Disabled</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">High-Contrast Color Theme</label>
+          <select id="select-theme" onchange="changeTheme(this.value)" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-sm font-bold text-white focus:outline-none focus:border-yellow-400">
+            <option value="neon">Neon High-Vis (Black / Yellow / Cyan)</option>
+            <option value="solar">Solar High-Noon (White Background / Bold)</option>
+            <option value="monochrome">Monochrome High-Contrast</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">Voice Speech Style</label>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="check-voice-announcements" onchange="toggleSpeechFromSettings(this.checked)" class="w-4 h-4 rounded text-yellow-400 focus:ring-0">
+            <label for="check-voice-announcements" class="text-xs text-neutral-300 font-bold">Announce score via speech synthesis</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-neutral-800 flex justify-end">
+        <button onclick="closeSettingsModal()" class="px-5 py-2 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase rounded-xl transition">
+          Apply & Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    /* ==========================================================================
+       BEACH VOLLEYBALL SCOREBOARD - CORE STATE & ENGINE
+       ========================================================================== */
+
+    const STATE_KEY = 'vb_scoreboard_state_v5';
+    const KEYMAP_KEY = 'vb_scoreboard_keymap_v5';
+    const BLEMAP_KEY = 'vb_scoreboard_blemap_v5';
+
+    let state = {
+      team1: { name: 'TEAM A', score: 0, sets: 0 },
+      team2: { name: 'TEAM B', score: 0, sets: 0 },
+      server: 'team1',
+      currentSet: 1,
+      targetPoints: 21,
+      switchInterval: 7,
+      isSwapped: false,
+      voiceEnabled: true,
+      wakeLockEnabled: false,
+      theme: 'neon',
+      setHistory: [],
+    };
+
+    let keymap = {
+      team1: ['Enter', 'NumpadEnter', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'AudioVolumeUp', 'VolumeUp'],
+      team2: ['Space', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'AudioVolumeDown', 'VolumeDown', 'MediaPlayPause'],
+    };
+
+    let bleMap = {
+      team1: null,
+      team2: null,
+    };
+
+    const clickTimers = { team1: null, team2: null };
+    const lastClickTimes = { team1: 0, team2: 0 };
+    const DOUBLE_CLICK_WINDOW_MS = 400;
+    const historyStack = [];
+    let wakeLockSentinel = null;
+    let recordingTarget = null;
+    let lastGamepadButtonState = {};
+    let connectedBluetoothDevice = null;
+
+    function initApp() {
+      loadSavedState();
+      loadSavedKeymap();
+      renderUI();
+      setupKeyListeners();
+      setupMediaSession();
+      setupGamepadPolling();
+      setupVisibilityListener();
+      startSilentAudioDriver();
+
+      if (!('wakeLock' in navigator)) {
+        const btnWake = document.getElementById('btn-wakelock');
+        if (btnWake) btnWake.title = "Screen Wake Lock API not supported on this browser";
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STATE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn('Storage save failed:', e);
+      }
+    }
+
+    function loadSavedState() {
+      try {
+        const saved = localStorage.getItem(STATE_KEY);
+        if (saved) {
+          state = { ...state, ...JSON.parse(saved) };
+        }
+      } catch (e) {
+        console.warn('Storage load failed:', e);
+      }
+    }
+
+    function saveKeymap() {
+      try {
+        localStorage.setItem(KEYMAP_KEY, JSON.stringify(keymap));
+        localStorage.setItem(BLEMAP_KEY, JSON.stringify(bleMap));
+      } catch (e) {
+        console.warn('Keymap save failed:', e);
+      }
+    }
+
+    function loadSavedKeymap() {
+      try {
+        const savedKey = localStorage.getItem(KEYMAP_KEY);
+        if (savedKey) keymap = { ...keymap, ...JSON.parse(savedKey) };
+        const savedBle = localStorage.getItem(BLEMAP_KEY);
+        if (savedBle) bleMap = { ...bleMap, ...JSON.parse(savedBle) };
+      } catch (e) {
+        console.warn('Keymap load failed:', e);
+      }
+    }
+
+    /* ==========================================================================
+       DIRECT WEB BLUETOOTH WITH GATT NOTIFICATION SUBSCRIPTIONS
+       ========================================================================== */
+
+    async function requestDirectBluetooth() {
+      if (!('bluetooth' in navigator)) {
+        alert("Web Bluetooth API is not supported in this browser. Please open over HTTPS on Chrome.");
+        return;
+      }
+
+      try {
+        logRemoteDiagnostic("Scanning for Bluetooth clickers...");
+        const device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [
+            'human_interface_device', 
+            0x1812, 
+            'generic_access', 
+            0x1800, 
+            'battery_service', 
+            0x180F,
+            'generic_attribute', 
+            0x1801,
+            'device_information',
+            0x180A
+          ]
+        });
+
+        connectedBluetoothDevice = device;
+        logRemoteDiagnostic(`Connecting to: ${device.name || 'AB Shutter3'}...`);
+
+        device.addEventListener('gattserverdisconnected', () => {
+          logRemoteDiagnostic(`Bluetooth Remote Disconnected.`);
+          updateBleUI(false);
+          showToast("Bluetooth Remote Disconnected");
+        });
+
+        const server = await device.gatt.connect();
+        logRemoteDiagnostic(`Connected! Subscribing to button notifications...`);
+
+        let activeChannels = 0;
+
+        try {
+          const services = await server.getPrimaryServices();
+          for (const service of services) {
+            try {
+              const characteristics = await service.getCharacteristics();
+              for (const char of characteristics) {
+                if (char.properties.notify || char.properties.indicate) {
+                  try {
+                    await char.startNotifications();
+                    char.addEventListener('characteristicvaluechanged', (event) => {
+                      handleBleNotification(event.target.value);
+                    });
+                    activeChannels++;
+                  } catch (e) {
+                    console.log("Could not start notification on char:", char.uuid, e);
+                  }
+                }
+              }
+            } catch (err) {
+              console.log("Could not get characteristics for service:", service.uuid);
+            }
+          }
+        } catch (err) {
+          console.warn("Service enumeration error:", err);
+        }
+
+        updateBleUI(true, device.name || 'AB Shutter3');
+        logRemoteDiagnostic(`✓ Ready! Connected to ${device.name || 'AB Shutter3'} (${activeChannels} channels active)`);
+        showToast(`Connected to ${device.name || 'AB Shutter3'}! Click to score.`);
+      } catch (err) {
+        console.warn("Bluetooth connection error:", err);
+        logRemoteDiagnostic(`Bluetooth: ${err.message}`);
+      }
+    }
+
+    function handleBleNotification(dataView) {
+      const bytes = [];
+      for (let i = 0; i < dataView.byteLength; i++) {
+        bytes.push(dataView.getUint8(i));
+      }
+
+      // Check if release (all 0s)
+      const isRelease = bytes.every(b => b === 0);
+      const signature = bytes.join(',');
+
+      logRemoteDiagnostic(`BLE Signal: [${bytes.map(b => '0x' + b.toString(16).padStart(2,'0')).join(' ')}]`);
+
+      if (isRelease) return;
+
+      // If recording target in modal
+      if (recordingTarget) {
+        bleMap[recordingTarget] = signature;
+        saveKeymap();
+        logRemoteDiagnostic(`✓ Learned ${state[recordingTarget].name}: [${signature}]`);
+        showToast(`Learned button for ${state[recordingTarget].name}!`);
+        stopKeyRecording();
+        renderUI();
+        return;
+      }
+
+      // If explicit mapping matches
+      if (bleMap.team1 && bleMap.team1 === signature) {
+        triggerTeamScoring('team1');
+        return;
+      }
+      if (bleMap.team2 && bleMap.team2 === signature) {
+        triggerTeamScoring('team2');
+        return;
+      }
+
+      // Smart Default Heuristics for AB Shutter 3 & selfie clickers
+      // Button 1 (iOS) usually has byte[0]=1 or byte[2]=40 or byte[1]=1
+      // Button 2 (Android) usually has byte[0]=2 or byte[2]=233 (0xe9) or byte[1]=2
+      const firstNonZero = bytes.find(b => b !== 0) || 0;
+      if (bytes[0] === 1 || bytes[1] === 1 || firstNonZero === 1 || firstNonZero === 0x28 || firstNonZero === 40) {
+        triggerTeamScoring('team1');
+      } else {
+        triggerTeamScoring('team2');
+      }
+    }
+
+    function updateBleUI(connected, name = '') {
+      const dot = document.getElementById('ble-status-dot');
+      const text = document.getElementById('ble-btn-text');
+      const modalText = document.getElementById('ble-modal-status-text');
+      const modalSub = document.getElementById('ble-modal-sub-text');
+
+      if (connected) {
+        if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block";
+        if (text) text.innerText = name ? `✓ ${name}` : 'Connected';
+        if (modalText) modalText.innerText = `Bluetooth: Connected to ${name || 'Remote'}`;
+        if (modalSub) modalSub.innerText = "Button notifications are actively listening.";
+      } else {
+        if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse";
+        if (text) text.innerText = "Pair Remote";
+        if (modalText) modalText.innerText = "Bluetooth: Ready to Pair";
+        if (modalSub) modalSub.innerText = "Click below to connect directly to your AB Shutter3.";
+      }
+    }
+
+    /* ==========================================================================
+       MEDIA SESSION API & SILENT AUDIO DRIVER
+       ========================================================================== */
+
+    function startSilentAudioDriver() {
+      const audio = document.getElementById('silent-audio-driver');
+      if (audio) {
+        const start = () => {
+          audio.play().catch(e => console.log("Audio waiting for user gesture"));
+          window.removeEventListener('click', start);
+          window.removeEventListener('touchstart', start);
+        };
+        window.addEventListener('click', start);
+        window.addEventListener('touchstart', start);
+      }
+    }
+
+    function setupMediaSession() {
+      if (!('mediaSession' in navigator)) return;
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: 'Beach Volleyball Scoreboard',
+        artist: 'Scorekeeper Remote Controller',
+        album: 'Live Match',
+      });
+
+      const handleMediaAction = (team, actionName) => {
+        logRemoteDiagnostic(`MediaSession: [${actionName}] → ${state[team].name}`);
+        triggerTeamScoring(team);
+      };
+
+      try {
+        navigator.mediaSession.setActionHandler('previoustrack', () => handleMediaAction('team1', 'Prev Track'));
+        navigator.mediaSession.setActionHandler('nexttrack', () => handleMediaAction('team2', 'Next Track'));
+        navigator.mediaSession.setActionHandler('seekbackward', () => handleMediaAction('team1', 'Seek Back'));
+        navigator.mediaSession.setActionHandler('seekforward', () => handleMediaAction('team2', 'Seek Fwd'));
+        navigator.mediaSession.setActionHandler('play', () => handleMediaAction('team1', 'Play'));
+        navigator.mediaSession.setActionHandler('pause', () => handleMediaAction('team2', 'Pause'));
+      } catch (e) {
+        console.warn("MediaSession action handler error:", e);
+      }
+    }
+
+    /* ==========================================================================
+       GAMEPAD API (FOR VR / 8BITDO / MINI CLICKERS IN GAME MODE)
+       ========================================================================== */
+
+    function setupGamepadPolling() {
+      function pollGamepads() {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+        for (let i = 0; i < gamepads.length; i++) {
+          const gp = gamepads[i];
+          if (!gp) continue;
+
+          gp.buttons.forEach((btn, btnIdx) => {
+            const isPressed = btn.pressed || btn.value > 0.5;
+            const prev = lastGamepadButtonState[`${i}_${btnIdx}`] || false;
+
+            if (isPressed && !prev) {
+              logRemoteDiagnostic(`Gamepad Button ${btnIdx} Pressed`);
+              if (recordingTarget) {
+                const codeName = `Gamepad_B${btnIdx}`;
+                if (!keymap[recordingTarget].includes(codeName)) {
+                  keymap[recordingTarget].push(codeName);
+                  saveKeymap();
+                }
+                stopKeyRecording();
+                renderUI();
+              } else {
+                if (btnIdx === 0 || btnIdx === 2 || btnIdx === 4 || btnIdx === 14) {
+                  triggerTeamScoring('team1');
+                } else if (btnIdx === 1 || btnIdx === 3 || btnIdx === 5 || btnIdx === 15) {
+                  triggerTeamScoring('team2');
+                }
+              }
+            }
+            lastGamepadButtonState[`${i}_${btnIdx}`] = isPressed;
+          });
+        }
+        requestAnimationFrame(pollGamepads);
+      }
+      requestAnimationFrame(pollGamepads);
+    }
+
+    /* ==========================================================================
+       SCORING LOGIC: SINGLE CLICK (+1) & RAPID DOUBLE CLICK (-1 UNDO)
+       ========================================================================== */
+
+    function triggerTeamScoring(team) {
+      const now = performance.now();
+      const timeSinceLast = now - lastClickTimes[team];
+
+      if (timeSinceLast < DOUBLE_CLICK_WINDOW_MS && clickTimers[team] !== null) {
+        // Double-click detected! Cancel pending +1 and perform UNDO (-1)
+        clearTimeout(clickTimers[team]);
+        clickTimers[team] = null;
+        lastClickTimes[team] = 0;
+
+        modifyScore(team, -1, 'double-click');
+        showToast(`Undo: -1 for ${state[team].name}`);
+        flashCardFeedback(team, 'red');
+      } else {
+        lastClickTimes[team] = now;
+        flashCardFeedback(team, 'pop');
+
+        clickTimers[team] = setTimeout(() => {
+          modifyScore(team, 1, 'single-click');
+          clickTimers[team] = null;
+        }, DOUBLE_CLICK_WINDOW_MS);
+      }
+    }
+
+    function handleTeamClick(team, event) {
+      if (event) event.stopPropagation();
+      triggerTeamScoring(team);
+    }
+
+    function incrementScore(team, event) {
+      if (event) event.stopPropagation();
+      modifyScore(team, 1, 'manual-add');
+      flashCardFeedback(team, 'pop');
+    }
+
+    function decrementScore(team, event) {
+      if (event) event.stopPropagation();
+      modifyScore(team, -1, 'manual-sub');
+      flashCardFeedback(team, 'red');
+    }
+
+    function modifyScore(team, delta, reason = '') {
+      const prevScore = state[team].score;
+      const newScore = Math.max(0, prevScore + delta);
+
+      if (prevScore === newScore && delta < 0) {
+        showToast(`Score is already 0`);
+        return;
+      }
+
+      historyStack.push(JSON.stringify(state));
+      if (historyStack.length > 30) historyStack.shift();
+
+      state[team].score = newScore;
+
+      if (delta > 0) {
+        state.server = team;
+      }
+
+      if ('vibrate' in navigator) {
+        navigator.vibrate(delta > 0 ? 40 : [30, 40, 30]);
+      }
+
+      saveState();
+      renderUI();
+      announceScore();
+      checkSideSwitchBanner();
+    }
+
+    function undoGlobal() {
+      if (historyStack.length === 0) {
+        showToast("Nothing to undo");
+        return;
+      }
+      const previousState = JSON.parse(historyStack.pop());
+      state = previousState;
+      saveState();
+      renderUI();
+      showToast("Undone last action");
+      announceScore();
+    }
+
+    /* ==========================================================================
+       WEB SPEECH API ANNOUNCER
+       ========================================================================== */
+
+    function announceScore() {
+      if (!state.voiceEnabled) return;
+      if (!('speechSynthesis' in window)) return;
+
+      window.speechSynthesis.cancel();
+
+      const serverTeam = state.server;
+      const receiverTeam = serverTeam === 'team1' ? 'team2' : 'team1';
+
+      const serverScore = state[serverTeam].score;
+      const receiverScore = state[receiverTeam].score;
+      const totalPoints = state.team1.score + state.team2.score;
+
+      let announcement = "";
+      const isSwitchPoint = state.switchInterval > 0 && totalPoints > 0 && (totalPoints % state.switchInterval === 0);
+
+      if (serverScore === receiverScore) {
+        announcement = `${serverScore} all.`;
+      } else {
+        announcement = `${serverScore} serving ${receiverScore}.`;
+      }
+
+      if (isSwitchPoint) {
+        announcement = `Switch sides! ${announcement}`;
+      } else if (isSetPoint()) {
+        announcement = `Set point. ${announcement}`;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(announcement);
+      utterance.rate = 1.05;
+      utterance.pitch = 1.0;
+      utterance.lang = 'en-US';
+
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('Speech synthesis error:', err);
+      }
+    }
+
+    function toggleSpeech() {
+      state.voiceEnabled = !state.voiceEnabled;
+      saveState();
+      renderUI();
+      showToast(state.voiceEnabled ? "Voice Announcer: ON" : "Voice Announcer: OFF");
+      if (state.voiceEnabled) {
+        announceScore();
+      }
+    }
+
+    function toggleSpeechFromSettings(enabled) {
+      state.voiceEnabled = enabled;
+      saveState();
+      renderUI();
+    }
+
+    /* ==========================================================================
+       SCREEN WAKE LOCK API
+       ========================================================================== */
+
+    async function toggleWakeLock() {
+      if (!('wakeLock' in navigator)) {
+        alert("Screen Wake Lock is not supported on this browser/device.");
+        return;
+      }
+
+      if (state.wakeLockEnabled && wakeLockSentinel) {
+        try {
+          await wakeLockSentinel.release();
+          wakeLockSentinel = null;
+          state.wakeLockEnabled = false;
+          showToast("Wake Lock Released (Screen may sleep)");
+        } catch (err) {
+          console.error("WakeLock release error:", err);
+        }
+      } else {
+        try {
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+          state.wakeLockEnabled = true;
+          wakeLockSentinel.addEventListener('release', () => {
+            state.wakeLockEnabled = false;
+            updateWakeLockUI();
+          });
+          showToast("Wake Lock ACTIVE: Screen will stay ON");
+        } catch (err) {
+          console.error("WakeLock request error:", err);
+          showToast("Wake Lock failed to activate");
+        }
+      }
+      saveState();
+      updateWakeLockUI();
+    }
+
+    function setupVisibilityListener() {
+      document.addEventListener('visibilitychange', async () => {
+        if (wakeLockSentinel !== null && document.visibilityState === 'visible' && state.wakeLockEnabled) {
+          try {
+            wakeLockSentinel = await navigator.wakeLock.request('screen');
+          } catch (e) {
+            console.warn("Re-acquiring WakeLock failed:", e);
+          }
+        }
+      });
+    }
+
+    function updateWakeLockUI() {
+      const icon = document.getElementById('wakelock-icon');
+      const text = document.getElementById('wakelock-text');
+      const btn = document.getElementById('btn-wakelock');
+
+      if (state.wakeLockEnabled) {
+        if (icon) icon.className = "w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block";
+        if (text) text.innerText = "Awake ON";
+        if (btn) {
+          btn.classList.add('border-green-500/80', 'text-green-300');
+          btn.classList.remove('border-neutral-700', 'text-neutral-300');
+        }
+      } else {
+        if (icon) icon.className = "w-2.5 h-2.5 rounded-full bg-neutral-500 inline-block";
+        if (text) text.innerText = "Wake Lock";
+        if (btn) {
+          btn.classList.remove('border-green-500/80', 'text-green-300');
+          btn.classList.add('border-neutral-700', 'text-neutral-300');
+        }
+      }
+    }
+
+    /* ==========================================================================
+       SIDE SWITCH BANNER ALERT (Multiple of 7)
+       ========================================================================== */
+
+    function checkSideSwitchBanner() {
+      const total = state.team1.score + state.team2.score;
+      const banner = document.getElementById('switch-banner');
+      const sub = document.getElementById('switch-banner-sub');
+
+      if (state.switchInterval > 0 && total > 0 && total % state.switchInterval === 0) {
+        sub.innerText = `Total points reached multiple of ${state.switchInterval} (Total: ${total})`;
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function dismissSwitchBanner() {
+      document.getElementById('switch-banner').classList.add('hidden');
+    }
+
+    /* ==========================================================================
+       KEYBOARD & REMOTE KEY INTERCEPTION ENGINE
+       ========================================================================== */
+
+    function setupKeyListeners() {
+      const interceptHandler = (e) => {
+        const code = e.code || e.key;
+
+        logRemoteDiagnostic(`Key: [${code}] (Key: "${e.key}")`);
+
+        if (recordingTarget) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+
+          if (!keymap[recordingTarget].includes(code)) {
+            keymap[recordingTarget].push(code);
+            saveKeymap();
+          }
+
+          stopKeyRecording();
+          renderUI();
+          return;
+        }
+
+        const isTeam1 = keymap.team1.includes(code) || keymap.team1.includes(e.key);
+        const isTeam2 = keymap.team2.includes(code) || keymap.team2.includes(e.key);
+
+        if (isTeam1 || isTeam2 || ['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'Enter', 'PageUp', 'PageDown'].includes(code)) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+
+        if (isTeam1) {
+          triggerTeamScoring('team1');
+        } else if (isTeam2) {
+          triggerTeamScoring('team2');
+        } else if (code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
+          undoGlobal();
+        } else if (code === 'KeyS') {
+          swapSides();
+        }
+      };
+
+      window.addEventListener('keydown', interceptHandler, { capture: true, passive: false });
+      window.addEventListener('keyup', (e) => {
+        if (['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown'].includes(e.code || e.key)) {
+          e.preventDefault();
+        }
+      }, { capture: true, passive: false });
+    }
+
+    function logRemoteDiagnostic(msg) {
+      const bar = document.getElementById('live-debug-text');
+      if (bar) bar.innerText = msg;
+
+      const testFeedback = document.getElementById('key-test-feedback');
+      if (testFeedback) {
+        testFeedback.innerHTML = `<span class="text-cyan-300 font-bold">⚡ Signal:</span> <code class="bg-neutral-800 px-2 py-0.5 rounded text-white">${msg}</code>`;
+      }
+    }
+
+    function openKeymapModal() {
+      updateKeymapDisplay();
+      document.getElementById('keymap-label-team1').innerText = `Team A Button (${state.team1.name})`;
+      document.getElementById('keymap-label-team2').innerText = `Team B Button (${state.team2.name})`;
+      document.getElementById('modal-keymap').classList.remove('hidden');
+    }
+
+    function closeKeymapModal() {
+      stopKeyRecording();
+      document.getElementById('modal-keymap').classList.add('hidden');
+    }
+
+    function updateKeymapDisplay() {
+      document.getElementById('keymap-code-team1').innerText = bleMap.team1 ? `BLE: [${bleMap.team1}]` : keymap.team1.slice(0, 2).join(' / ');
+      document.getElementById('keymap-code-team2').innerText = bleMap.team2 ? `BLE: [${bleMap.team2}]` : keymap.team2.slice(0, 2).join(' / ');
+    }
+
+    function startKeyRecording(target) {
+      recordingTarget = target;
+      const btn = document.getElementById(`btn-record-${target}`);
+      if (btn) {
+        btn.innerText = 'Click Remote Button...';
+        btn.classList.add('animate-pulse', 'bg-white', 'text-black');
+      }
+      const testFeedback = document.getElementById('key-test-feedback');
+      if (testFeedback) {
+        testFeedback.innerHTML = `<span class="text-cyan-400 animate-pulse font-bold">Listening... Click your shutter remote button now!</span>`;
+      }
+    }
+
+    function stopKeyRecording() {
+      if (recordingTarget) {
+        const btn = document.getElementById(`btn-record-${recordingTarget}`);
+        if (btn) {
+          btn.innerText = 'Learn Button';
+          btn.classList.remove('animate-pulse', 'bg-white', 'text-black');
+        }
+      }
+      recordingTarget = null;
+      updateKeymapDisplay();
+    }
+
+    function resetKeymapDefaults() {
+      keymap = {
+        team1: ['Enter', 'NumpadEnter', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'AudioVolumeUp', 'VolumeUp'],
+        team2: ['Space', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'AudioVolumeDown', 'VolumeDown', 'MediaPlayPause'],
+      };
+      bleMap = { team1: null, team2: null };
+      saveKeymap();
+      updateKeymapDisplay();
+      showToast("Mappings reset to standard defaults");
+      renderUI();
+    }
+
+    /* ==========================================================================
+       MATCH MANAGEMENT & UI RENDERING
+       ========================================================================== */
+
+    function renderUI() {
+      const score1El = document.getElementById('score-team1');
+      const score2El = document.getElementById('score-team2');
+      score1El.innerText = state.team1.score;
+      score2El.innerText = state.team2.score;
+
+      document.getElementById('name-team1').innerText = state.team1.name;
+      document.getElementById('name-team2').innerText = state.team2.name;
+
+      document.getElementById('sets-team1').innerText = state.team1.sets;
+      document.getElementById('sets-team2').innerText = state.team2.sets;
+
+      document.getElementById('set-indicator-text').innerText = `SET ${state.currentSet}`;
+
+      const total = state.team1.score + state.team2.score;
+      document.getElementById('total-points-badge').innerText = total;
+
+      updateServeBadges();
+
+      document.getElementById('hint-key-team1').innerText = bleMap.team1 ? 'BLE 1' : (keymap.team1[0] || 'Btn 1');
+      document.getElementById('hint-key-team2').innerText = bleMap.team2 ? 'BLE 2' : (keymap.team2[0] || 'Btn 2');
+
+      document.getElementById('voice-icon-on').classList.toggle('hidden', !state.voiceEnabled);
+      document.getElementById('voice-icon-off').classList.toggle('hidden', state.voiceEnabled);
+      const voiceCheck = document.getElementById('check-voice-announcements');
+      if (voiceCheck) voiceCheck.checked = state.voiceEnabled;
+
+      const matchBadge = document.getElementById('match-status-badge');
+      if (isSetPoint()) {
+        matchBadge.classList.remove('hidden');
+        matchBadge.innerText = isMatchPoint() ? "MATCH POINT" : "SET POINT";
+      } else {
+        matchBadge.classList.add('hidden');
+      }
+
+      renderSetHistory();
+      updateWakeLockUI();
+      applyLayoutSwap();
+      applyTheme();
+    }
+
+    function updateServeBadges() {
+      const btn1 = document.getElementById('serve-team1');
+      const btn2 = document.getElementById('serve-team2');
+
+      if (state.server === 'team1') {
+        btn1.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-yellow-400 text-black border-yellow-300";
+        btn2.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-500 border-neutral-800 hover:border-neutral-600";
+      } else {
+        btn2.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-cyan-400 text-black border-cyan-300";
+        btn1.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-500 border-neutral-800 hover:border-neutral-600";
+      }
+    }
+
+    function setServer(team, event) {
+      if (event) event.stopPropagation();
+      state.server = team;
+      saveState();
+      updateServeBadges();
+      showToast(`${state[team].name} is now serving`);
+      announceScore();
+    }
+
+    function swapSides() {
+      state.isSwapped = !state.isSwapped;
+      saveState();
+      applyLayoutSwap();
+      showToast("Court sides swapped on display");
+    }
+
+    function applyLayoutSwap() {
+      const container = document.getElementById('scoreboard-container');
+      if (state.isSwapped) {
+        container.classList.add('flex-col-reverse', 'md:flex-row-reverse');
+      } else {
+        container.classList.remove('flex-col-reverse', 'md:flex-row-reverse');
+      }
+    }
+
+    function isSetPoint() {
+      const s1 = state.team1.score;
+      const s2 = state.team2.score;
+      const target = state.targetPoints;
+      return (s1 >= target - 1 && s1 > s2) || (s2 >= target - 1 && s2 > s1);
+    }
+
+    function isMatchPoint() {
+      if (isSetPoint()) {
+        if (state.team1.sets === 1 && state.team1.score > state.team2.score) return true;
+        if (state.team2.sets === 1 && state.team2.score > state.team1.score) return true;
+      }
+      return false;
+    }
+
+    function editTeamName(team, event) {
+      if (event) event.stopPropagation();
+      const current = state[team].name;
+      const newName = prompt(`Enter name for ${current}:`, current);
+      if (newName && newName.trim() !== "") {
+        state[team].name = newName.trim();
+        saveState();
+        renderUI();
+      }
+    }
+
+    function flashCardFeedback(team, type = 'pop') {
+      const scoreEl = document.getElementById(`score-${team}`);
+      const glowEl = document.getElementById(`glow-${team}`);
+      if (scoreEl) {
+        scoreEl.classList.remove('animate-scorePop');
+        void scoreEl.offsetWidth;
+        scoreEl.classList.add('animate-scorePop');
+      }
+      if (glowEl) {
+        if (type === 'red') {
+          glowEl.classList.add('bg-red-600/30');
+          setTimeout(() => glowEl.classList.remove('bg-red-600/30'), 300);
+        } else {
+          glowEl.classList.add('brightness-200');
+          setTimeout(() => glowEl.classList.remove('brightness-200'), 200);
+        }
+      }
+    }
+
+    function endSet() {
+      const s1 = state.team1.score;
+      const s2 = state.team2.score;
+
+      if (s1 === 0 && s2 === 0) {
+        showToast("Cannot finish set with 0 - 0");
+        return;
+      }
+
+      let winner = s1 > s2 ? 'team1' : 'team2';
+      const winnerName = state[winner].name;
+
+      if (!confirm(`End Set ${state.currentSet}?\nWinner: ${winnerName} (${s1} - ${s2})`)) {
+        return;
+      }
+
+      state[winner].sets += 1;
+      state.setHistory.push({
+        set: state.currentSet,
+        team1Score: s1,
+        team2Score: s2,
+        winner: winner,
+      });
+
+      state.currentSet += 1;
+      state.team1.score = 0;
+      state.team2.score = 0;
+
+      if (state.currentSet === 3) {
+        state.targetPoints = 15;
+        state.switchInterval = 5;
+      }
+
+      saveState();
+      renderUI();
+      dismissSwitchBanner();
+
+      const victoryText = `${winnerName} wins set ${state.currentSet - 1}!`;
+      showToast(victoryText);
+
+      if (state.voiceEnabled && ('speechSynthesis' in window)) {
+        const u = new SpeechSynthesisUtterance(victoryText);
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function renderSetHistory() {
+      const container = document.getElementById('set-history-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      state.setHistory.forEach(item => {
+        const badge = document.createElement('span');
+        badge.className = 'px-1.5 py-0.5 bg-neutral-800 rounded border border-neutral-700 text-[10px] text-neutral-300';
+        badge.innerText = `S${item.set}: ${item.team1Score}-${item.team2Score}`;
+        container.appendChild(badge);
+      });
+    }
+
+    function promptResetMatch() {
+      if (confirm("Reset the entire match (all scores, sets, and history)?")) {
+        historyStack.push(JSON.stringify(state));
+        state.team1.score = 0;
+        state.team2.score = 0;
+        state.team1.sets = 0;
+        state.team2.sets = 0;
+        state.currentSet = 1;
+        state.targetPoints = 21;
+        state.switchInterval = 7;
+        state.setHistory = [];
+        saveState();
+        renderUI();
+        dismissSwitchBanner();
+        showToast("Match has been reset");
+      }
+    }
+
+    /* ==========================================================================
+       SETTINGS & THEMES
+       ========================================================================== */
+
+    function openSettingsModal() {
+      document.getElementById('modal-settings').classList.remove('hidden');
+      updateSettingsButtons();
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('modal-settings').classList.add('hidden');
+    }
+
+    function setTargetPoints(pts) {
+      state.targetPoints = pts;
+      saveState();
+      updateSettingsButtons();
+      renderUI();
+    }
+
+    function setSwitchInterval(interval) {
+      state.switchInterval = interval;
+      saveState();
+      updateSettingsButtons();
+      renderUI();
+    }
+
+    function updateSettingsButtons() {
+      [15, 21, 25].forEach(pts => {
+        const btn = document.getElementById(`target-btn-${pts}`);
+        if (btn) {
+          if (state.targetPoints === pts) {
+            btn.className = "py-2 rounded-lg font-black text-sm bg-yellow-400 text-black border-2 border-yellow-400";
+          } else {
+            btn.className = "py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700";
+          }
+        }
+      });
+
+      [7, 5, 0].forEach(i => {
+        const btn = document.getElementById(`switch-btn-${i}`);
+        if (btn) {
+          if (state.switchInterval === i) {
+            btn.className = "py-2 rounded-lg font-black text-sm bg-yellow-400 text-black border-2 border-yellow-400";
+          } else {
+            btn.className = "py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700";
+          }
+        }
+      });
+    }
+
+    function changeTheme(themeName) {
+      state.theme = themeName;
+      saveState();
+      applyTheme();
+    }
+
+    function applyTheme() {
+      const body = document.body;
+      const select = document.getElementById('select-theme');
+      if (select) select.value = state.theme;
+
+      if (state.theme === 'solar') {
+        body.classList.remove('bg-black');
+        body.classList.add('bg-white');
+      } else {
+        body.classList.remove('bg-white');
+        body.classList.add('bg-black');
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.warn(err));
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const msg = document.getElementById('toast-msg');
+      if (toast && msg) {
+        msg.innerText = message;
+        toast.classList.remove('opacity-0');
+        toast.classList.add('opacity-100');
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => {
+          toast.classList.remove('opacity-100');
+          toast.classList.add('opacity-0');
+        }, 2200);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>

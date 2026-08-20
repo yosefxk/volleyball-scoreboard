@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.BeachVolleyballScoreboard" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:navigationBarColor">@color/black</item>
+    </style>
+    <style name="Theme.BeachVolleyballScoreboard.Fullscreen" parent="Theme.BeachVolleyballScoreboard">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+</resources>
