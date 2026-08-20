@@ -42,8 +42,8 @@
               '50%': { transform: 'scale(1.02)', filter: 'brightness(1.2)' },
             },
             scorePop: {
-              '0%': { transform: 'scale(0.88)' },
-              '50%': { transform: 'scale(1.08)' },
+              '0%': { transform: 'scale(0.92)' },
+              '50%': { transform: 'scale(1.05)' },
               '100%': { transform: 'scale(1)' },
             },
             flashRed: {
@@ -53,7 +53,7 @@
           },
           animation: {
             bannerPulse: 'bannerPulse 1.2s infinite ease-in-out',
-            scorePop: 'scorePop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            scorePop: 'scorePop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
             flashRed: 'flashRed 0.4s ease-out',
           }
         }
@@ -68,7 +68,8 @@
       -webkit-user-select: none;
     }
     
-    .huge-score {
+    /* Standard score size */
+    .standard-score {
       font-size: min(32vw, 36vh);
       line-height: 0.85;
       font-feature-settings: "tnum";
@@ -77,18 +78,20 @@
     }
     
     @media (orientation: landscape) {
-      .huge-score {
+      .standard-score {
         font-size: min(24vw, 55vh);
       }
     }
 
-    .text-stroke-black {
-      -webkit-text-stroke: 3px #000;
+    /* GIANT SCOREBOARD MODE (Maximal possible screen fill in landscape) */
+    .giant-score {
+      font-size: min(46vw, 92vh) !important;
+      line-height: 0.82 !important;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 6px 30px rgba(0,0,0,0.95);
     }
-    .text-stroke-thick {
-      -webkit-text-stroke: 6px #000;
-    }
-    
+
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -100,8 +103,8 @@
 </head>
 <body class="h-full w-full bg-black text-white font-display overflow-hidden flex flex-col justify-between select-none">
 
-  <!-- TOP APP BAR -->
-  <header class="w-full bg-neutral-950/90 border-b-2 border-neutral-800 z-30 px-3 py-2 flex items-center justify-between gap-2">
+  <!-- TOP APP BAR (Hidden in Giant Fullscreen Mode) -->
+  <header id="app-header" class="w-full bg-neutral-950/90 border-b-2 border-neutral-800 z-30 px-3 py-2 flex items-center justify-between gap-2 transition-all duration-200">
     <!-- Left: Match Info & Set Counter -->
     <div class="flex items-center gap-2">
       <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-400/20 text-yellow-300 border border-yellow-400/40 rounded font-black text-xs uppercase tracking-wider">
@@ -121,10 +124,18 @@
 
     <!-- Right: Quick Controls -->
     <div class="flex items-center gap-1.5">
+      <!-- GIANT HORIZONTAL SCOREBOARD BUTTON -->
+      <button onclick="toggleGiantScoreMode()" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black flex items-center gap-1.5 text-xs font-black uppercase tracking-wider shadow-lg transition active:scale-95 border border-yellow-300" title="Switch to Giant Horizontal Numbers Mode">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+          <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 2v8h16V8H4zm6 2h4v4h-4v-4z"/>
+        </svg>
+        <span>Giant Mode</span>
+      </button>
+
       <!-- Remote Status / Help Button -->
-      <button onclick="handleRemoteButtonClick()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-cyan-400 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Remote Status">
-        <span id="remote-indicator-dot" class="w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block"></span>
-        <span id="remote-indicator-text" class="hidden sm:inline">Remote Active</span>
+      <button onclick="openKeymapModal()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Remote Info">
+        <span class="w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block"></span>
+        <span class="hidden md:inline">Remote</span>
       </button>
 
       <!-- Web Speech Announcer Toggle -->
@@ -150,24 +161,23 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
         </svg>
       </button>
-
-      <!-- Fullscreen Toggle -->
-      <button onclick="toggleFullscreen()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 transition active:scale-95" title="Toggle Fullscreen">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"/>
-        </svg>
-      </button>
     </div>
   </header>
 
-  <!-- SWITCH SIDES BANNER ALERT (Multiple of 7 in Beach Volleyball) -->
-  <div id="switch-banner" class="hidden fixed top-14 left-0 right-0 z-40 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-black px-4 py-3 shadow-2xl border-y-4 border-black animate-bannerPulse">
+  <!-- FLOATING EXIT BUTTON FOR GIANT SCOREBOARD MODE -->
+  <button id="btn-exit-giant" onclick="toggleGiantScoreMode()" class="hidden fixed top-3 right-3 z-50 px-3 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-white/90 border border-neutral-700/80 shadow-2xl backdrop-blur-sm text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95">
+    <span>✕</span>
+    <span>Exit Giant Mode</span>
+  </button>
+
+  <!-- SWITCH SIDES BANNER ALERT -->
+  <div id="switch-banner" class="hidden fixed top-4 left-0 right-0 z-40 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-black px-4 py-3 shadow-2xl border-y-4 border-black animate-bannerPulse">
     <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
       <div class="flex items-center gap-3">
         <span class="text-3xl">🔄</span>
         <div>
           <h2 class="text-xl sm:text-2xl font-black uppercase tracking-wider leading-none">SWITCH COURT SIDES!</h2>
-          <p id="switch-banner-sub" class="text-xs sm:text-sm font-bold opacity-90">Total points reach multiple of 7 (Total: 7)</p>
+          <p id="switch-banner-sub" class="text-xs sm:text-sm font-bold opacity-90">Total points reach multiple of 7</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -187,24 +197,24 @@
     <span id="toast-msg">Score updated</span>
   </div>
 
-  <!-- LIVE EVENT DEBUG STATUS BAR -->
+  <!-- LIVE EVENT DEBUG STATUS BAR (Hidden in Giant Mode) -->
   <div id="debug-status-bar" class="w-full bg-neutral-950 border-b border-neutral-800 px-3 py-1 text-[11px] font-mono text-neutral-400 flex items-center justify-between">
     <div class="flex items-center gap-2 truncate">
       <span id="debug-indicator" class="w-2 h-2 rounded-full bg-green-400 inline-block shadow-[0_0_6px_#22c55e]"></span>
-      <span id="live-debug-text">Remote Ready: Press Button 1 (Team A) or Button 2 (Team B)</span>
+      <span id="live-debug-text">Remote Ready: Button 1 (Team A) | Button 2 (Team B)</span>
     </div>
   </div>
 
   <!-- MAIN SCOREBOARD ARENA -->
   <main id="scoreboard-container" class="flex-1 w-full h-full flex flex-col md:flex-row overflow-hidden relative">
 
-    <!-- TEAM 1 (Left in landscape / Top in portrait) -->
+    <!-- TEAM 1 (Left Half in landscape) -->
     <section id="panel-team1" class="relative flex-1 flex flex-col justify-between items-center p-3 sm:p-5 border-b-4 md:border-b-0 md:border-r-4 border-black transition-colors duration-200 cursor-pointer overflow-hidden group select-none"
              onclick="handleTeamClick('team1', event)">
       <div id="glow-team1" class="absolute inset-0 bg-yellow-500/10 pointer-events-none transition duration-150"></div>
       
-      <!-- Top Bar: Name & Serve Badge & Sets Won -->
-      <div class="w-full flex items-center justify-between z-10">
+      <!-- Top Bar: Name & Serve Badge & Sets Won (Hidden in Giant Mode) -->
+      <div class="standard-ui-element w-full flex items-center justify-between z-10">
         <div class="flex items-center gap-2">
           <button id="serve-team1" onclick="setServer('team1', event)" class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-yellow-400 text-black border-yellow-300" title="Click to designate server">
             <span class="text-sm">🏐</span>
@@ -220,24 +230,29 @@
         </div>
       </div>
 
+      <!-- Giant Mode Serving Dot Indicator (Visible only in Giant Mode when serving) -->
+      <div id="giant-serve-dot-team1" class="hidden absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 bg-yellow-400 text-black rounded-full font-black text-xs uppercase shadow-2xl">
+        <span>🏐</span> <span>SERVE</span>
+      </div>
+
       <!-- Center: Massive Score Display -->
       <div class="flex-1 flex flex-col items-center justify-center my-auto z-10 w-full">
-        <div id="score-team1" class="huge-score font-score font-black text-yellow-400 text-center tracking-tighter filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+        <div id="score-team1" class="standard-score font-score font-black text-yellow-400 text-center tracking-tighter filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
           0
         </div>
-        <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
+        <div class="standard-ui-element text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
           Button 1 / Tap = +1 &nbsp;|&nbsp; Double Click = -1
         </div>
       </div>
 
-      <!-- Bottom: Manual Fine-Tuning Controls -->
-      <div class="w-full flex items-center justify-between z-10 pt-1" onclick="event.stopPropagation()">
+      <!-- Bottom: Manual Controls (Hidden in Giant Mode) -->
+      <div class="standard-ui-element w-full flex items-center justify-between z-10 pt-1" onclick="event.stopPropagation()">
         <button onclick="decrementScore('team1', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-neutral-900/90 border-2 border-red-500/60 hover:border-red-500 text-red-400 text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition active:bg-red-500 active:text-white" title="Undo / Subtract 1 point">
           −
         </button>
 
         <div class="px-2.5 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span class="text-yellow-400 font-bold">Button 1 (iOS / Vol+)</span>
+          <span class="text-yellow-400 font-bold">Button 1</span>
         </div>
 
         <button onclick="incrementScore('team1', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-yellow-300" title="Add 1 point">
@@ -246,13 +261,13 @@
       </div>
     </section>
 
-    <!-- TEAM 2 (Right in landscape / Bottom in portrait) -->
+    <!-- TEAM 2 (Right Half in landscape) -->
     <section id="panel-team2" class="relative flex-1 flex flex-col justify-between items-center p-3 sm:p-5 transition-colors duration-200 cursor-pointer overflow-hidden group select-none"
              onclick="handleTeamClick('team2', event)">
       <div id="glow-team2" class="absolute inset-0 bg-cyan-500/10 pointer-events-none transition duration-150"></div>
 
-      <!-- Top Bar: Name & Serve Badge & Sets Won -->
-      <div class="w-full flex items-center justify-between z-10">
+      <!-- Top Bar: Name & Serve Badge & Sets Won (Hidden in Giant Mode) -->
+      <div class="standard-ui-element w-full flex items-center justify-between z-10">
         <div class="flex items-center gap-2">
           <button id="serve-team2" onclick="setServer('team2', event)" class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-400 border-neutral-700 hover:border-neutral-500" title="Click to designate server">
             <span class="text-sm">🏐</span>
@@ -268,24 +283,29 @@
         </div>
       </div>
 
+      <!-- Giant Mode Serving Dot Indicator (Visible only in Giant Mode when serving) -->
+      <div id="giant-serve-dot-team2" class="hidden absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 bg-cyan-400 text-black rounded-full font-black text-xs uppercase shadow-2xl">
+        <span>🏐</span> <span>SERVE</span>
+      </div>
+
       <!-- Center: Massive Score Display -->
       <div class="flex-1 flex flex-col items-center justify-center my-auto z-10 w-full">
-        <div id="score-team2" class="huge-score font-score font-black text-cyan-400 text-center tracking-tighter filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
+        <div id="score-team2" class="standard-score font-score font-black text-cyan-400 text-center tracking-tighter filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
           0
         </div>
-        <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
+        <div class="standard-ui-element text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
           Button 2 / Tap = +1 &nbsp;|&nbsp; Double Click = -1
         </div>
       </div>
 
-      <!-- Bottom: Manual Fine-Tuning Controls -->
-      <div class="w-full flex items-center justify-between z-10 pt-1" onclick="event.stopPropagation()">
+      <!-- Bottom: Manual Controls (Hidden in Giant Mode) -->
+      <div class="standard-ui-element w-full flex items-center justify-between z-10 pt-1" onclick="event.stopPropagation()">
         <button onclick="decrementScore('team2', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-neutral-900/90 border-2 border-red-500/60 hover:border-red-500 text-red-400 text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition active:bg-red-500 active:text-white" title="Undo / Subtract 1 point">
           −
         </button>
 
         <div class="px-2.5 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span class="text-cyan-400 font-bold">Button 2 (Android / Vol−)</span>
+          <span class="text-cyan-400 font-bold">Button 2</span>
         </div>
 
         <button onclick="incrementScore('team2', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-cyan-300" title="Add 1 point">
@@ -296,8 +316,8 @@
 
   </main>
 
-  <!-- BOTTOM STATUS & QUICK ACTION BAR -->
-  <footer class="w-full bg-neutral-950 border-t-2 border-neutral-800 z-30 px-3 py-1.5 flex items-center justify-between text-xs text-neutral-400">
+  <!-- BOTTOM STATUS & QUICK ACTION BAR (Hidden in Giant Mode) -->
+  <footer id="app-footer" class="w-full bg-neutral-950 border-t-2 border-neutral-800 z-30 px-3 py-1.5 flex items-center justify-between text-xs text-neutral-400 transition-all duration-200">
     <div class="flex items-center gap-2">
       <button onclick="endSet()" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-white rounded font-bold border border-neutral-600 transition active:scale-95 flex items-center gap-1">
         <span>🏆</span>
@@ -309,7 +329,6 @@
       </button>
     </div>
 
-    <!-- Match Point / Set Point Status -->
     <div id="match-status-badge" class="font-black tracking-wider uppercase text-yellow-400 text-xs px-2 py-0.5 rounded bg-yellow-400/10 border border-yellow-400/30 hidden">
       SET POINT
     </div>
@@ -339,10 +358,10 @@
       <div class="p-3.5 bg-gradient-to-r from-green-950/80 to-cyan-950/80 rounded-xl border border-green-500/50 mb-4">
         <div class="text-xs font-black uppercase text-green-300 flex items-center gap-1.5 mb-1">
           <span class="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e]"></span>
-          Native Android Key Interception Active
+          Hardware Remote Connected
         </div>
         <p class="text-[11px] text-neutral-300 leading-relaxed">
-          The app intercepts your AB Shutter remote at the hardware level. Simply pair your shutter in Android Settings → Bluetooth, then click:
+          The app captures button clicks from your paired AB Shutter remote with 0ms lag:
         </p>
         <div class="mt-2 text-xs font-mono font-bold text-yellow-300 space-y-1">
           <div>• <strong>Button 1 (iOS / Big Button)</strong> → +1 for Team A</div>
@@ -418,7 +437,7 @@
        BEACH VOLLEYBALL SCOREBOARD - CORE STATE & ENGINE
        ========================================================================== */
 
-    const STATE_KEY = 'vb_scoreboard_state_v6';
+    const STATE_KEY = 'vb_scoreboard_state_v7';
 
     let state = {
       team1: { name: 'TEAM A', score: 0, sets: 0 },
@@ -431,6 +450,7 @@
       voiceEnabled: true,
       theme: 'neon',
       setHistory: [],
+      isGiantMode: false,
     };
 
     const clickTimers = { team1: null, team2: null };
@@ -464,27 +484,111 @@
     }
 
     /* ==========================================================================
+       GIANT HORIZONTAL SCOREBOARD MODE (MAXIMAL NUMBERS ONLY)
+       ========================================================================== */
+
+    function toggleGiantScoreMode() {
+      state.isGiantMode = !state.isGiantMode;
+      applyGiantModeUI();
+      saveState();
+
+      if (state.isGiantMode) {
+        // Lock to Landscape
+        if (window.AndroidNative && window.AndroidNative.setOrientation) {
+          window.AndroidNative.setOrientation("landscape");
+        } else if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+        showToast("Giant Match Mode: Numbers Maximized");
+      } else {
+        // Unlock Orientation
+        if (window.AndroidNative && window.AndroidNative.setOrientation) {
+          window.AndroidNative.setOrientation("unspecified");
+        } else if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+        showToast("Standard Mode Restored");
+      }
+    }
+
+    function applyGiantModeUI() {
+      const header = document.getElementById('app-header');
+      const footer = document.getElementById('app-footer');
+      const debugBar = document.getElementById('debug-status-bar');
+      const exitBtn = document.getElementById('btn-exit-giant');
+      const score1 = document.getElementById('score-team1');
+      const score2 = document.getElementById('score-team2');
+      const container = document.getElementById('scoreboard-container');
+      const standardElements = document.querySelectorAll('.standard-ui-element');
+
+      const dot1 = document.getElementById('giant-serve-dot-team1');
+      const dot2 = document.getElementById('giant-serve-dot-team2');
+
+      if (state.isGiantMode) {
+        if (header) header.classList.add('hidden');
+        if (footer) footer.classList.add('hidden');
+        if (debugBar) debugBar.classList.add('hidden');
+        if (exitBtn) exitBtn.classList.remove('hidden');
+
+        standardElements.forEach(el => el.classList.add('hidden'));
+
+        // Force Horizontal Row
+        if (container) {
+          container.classList.remove('flex-col');
+          container.classList.add('flex-row');
+        }
+
+        // Apply Giant Typography
+        if (score1) {
+          score1.classList.remove('standard-score');
+          score1.classList.add('giant-score');
+        }
+        if (score2) {
+          score2.classList.remove('standard-score');
+          score2.classList.add('giant-score');
+        }
+
+        // Serving indicators in giant mode
+        if (dot1 && dot2) {
+          dot1.classList.toggle('hidden', state.server !== 'team1');
+          dot2.classList.toggle('hidden', state.server !== 'team2');
+        }
+      } else {
+        if (header) header.classList.remove('hidden');
+        if (footer) footer.classList.remove('hidden');
+        if (debugBar) debugBar.classList.remove('hidden');
+        if (exitBtn) exitBtn.classList.add('hidden');
+
+        standardElements.forEach(el => el.classList.remove('hidden'));
+
+        if (score1) {
+          score1.classList.remove('giant-score');
+          score1.classList.add('standard-score');
+        }
+        if (score2) {
+          score2.classList.remove('giant-score');
+          score2.classList.add('standard-score');
+        }
+
+        if (dot1) dot1.classList.add('hidden');
+        if (dot2) dot2.classList.add('hidden');
+
+        applyLayoutSwap();
+      }
+    }
+
+    /* ==========================================================================
        NATIVE ANDROID BRIDGE (TRIGGERED BY MAINACTIVITY DISPATCHKEYEVENT)
        ========================================================================== */
 
     window.handleNativeRemoteClick = function(team, source) {
-      logRemoteDiagnostic(`⚡ Click Registered: [${source}] → ${state[team].name}`);
+      logRemoteDiagnostic(`⚡ Click: [${source}] → ${state[team].name}`);
       triggerTeamScoring(team);
     };
 
     window.setNativeAndroidMode = function(isActive) {
-      const dot = document.getElementById('remote-indicator-dot');
-      const text = document.getElementById('remote-indicator-text');
-      if (isActive) {
-        if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block";
-        if (text) text.innerText = "Remote Ready";
-        logRemoteDiagnostic("✓ Android Native Remote Ready: Click shutter buttons to score");
-      }
+      logRemoteDiagnostic("✓ Native Android Remote Ready: Click shutter buttons to score");
     };
-
-    function handleRemoteButtonClick() {
-      openKeymapModal();
-    }
 
     /* ==========================================================================
        SCORING LOGIC: SINGLE CLICK (+1) & RAPID DOUBLE CLICK (-1 UNDO)
@@ -495,7 +599,6 @@
       const timeSinceLast = now - lastClickTimes[team];
 
       if (timeSinceLast < DOUBLE_CLICK_WINDOW_MS && clickTimers[team] !== null) {
-        // Double-click detected! Cancel pending +1 and perform UNDO (-1)
         clearTimeout(clickTimers[team]);
         clickTimers[team] = null;
         lastClickTimes[team] = 0;
@@ -549,7 +652,6 @@
         state.server = team;
       }
 
-      // Native Vibration
       if (window.AndroidNative && window.AndroidNative.vibrate) {
         window.AndroidNative.vibrate(delta > 0 ? 40 : 80);
       } else if ('vibrate' in navigator) {
@@ -576,7 +678,7 @@
     }
 
     /* ==========================================================================
-       TEXT-TO-SPEECH ANNOUNCER (NATIVE & WEB SPEECH)
+       TEXT-TO-SPEECH ANNOUNCER
        ========================================================================== */
 
     function announceScore() {
@@ -604,13 +706,11 @@
         announcement = `Set point. ${announcement}`;
       }
 
-      // Use Native Android TextToSpeech if in APK
       if (window.AndroidNative && window.AndroidNative.speak) {
         window.AndroidNative.speak(announcement);
         return;
       }
 
-      // Web Speech Fallback for browser
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(announcement);
@@ -663,7 +763,7 @@
     }
 
     /* ==========================================================================
-       KEYBOARD LISTENER (FALLBACK FOR BROWSER / KEYPADS)
+       KEYBOARD LISTENER
        ========================================================================== */
 
     function setupKeyListeners() {
@@ -681,6 +781,8 @@
           undoGlobal();
         } else if (code === 'KeyS') {
           swapSides();
+        } else if (code === 'KeyF' || code === 'KeyG') {
+          toggleGiantScoreMode();
         }
       });
     }
@@ -705,50 +807,68 @@
     function renderUI() {
       const score1El = document.getElementById('score-team1');
       const score2El = document.getElementById('score-team2');
-      score1El.innerText = state.team1.score;
-      score2El.innerText = state.team2.score;
+      if (score1El) score1El.innerText = state.team1.score;
+      if (score2El) score2El.innerText = state.team2.score;
 
-      document.getElementById('name-team1').innerText = state.team1.name;
-      document.getElementById('name-team2').innerText = state.team2.name;
+      const n1 = document.getElementById('name-team1');
+      const n2 = document.getElementById('name-team2');
+      if (n1) n1.innerText = state.team1.name;
+      if (n2) n2.innerText = state.team2.name;
 
-      document.getElementById('sets-team1').innerText = state.team1.sets;
-      document.getElementById('sets-team2').innerText = state.team2.sets;
+      const s1 = document.getElementById('sets-team1');
+      const s2 = document.getElementById('sets-team2');
+      if (s1) s1.innerText = state.team1.sets;
+      if (s2) s2.innerText = state.team2.sets;
 
-      document.getElementById('set-indicator-text').innerText = `SET ${state.currentSet}`;
+      const setInd = document.getElementById('set-indicator-text');
+      if (setInd) setInd.innerText = `SET ${state.currentSet}`;
 
       const total = state.team1.score + state.team2.score;
-      document.getElementById('total-points-badge').innerText = total;
+      const totalBadge = document.getElementById('total-points-badge');
+      if (totalBadge) totalBadge.innerText = total;
 
       updateServeBadges();
 
-      document.getElementById('voice-icon-on').classList.toggle('hidden', !state.voiceEnabled);
-      document.getElementById('voice-icon-off').classList.toggle('hidden', state.voiceEnabled);
-      const voiceCheck = document.getElementById('check-voice-announcements');
-      if (voiceCheck) voiceCheck.checked = state.voiceEnabled;
+      const vOn = document.getElementById('voice-icon-on');
+      const vOff = document.getElementById('voice-icon-off');
+      if (vOn) vOn.classList.toggle('hidden', !state.voiceEnabled);
+      if (vOff) vOff.classList.toggle('hidden', state.voiceEnabled);
 
       const matchBadge = document.getElementById('match-status-badge');
-      if (isSetPoint()) {
-        matchBadge.classList.remove('hidden');
-        matchBadge.innerText = isMatchPoint() ? "MATCH POINT" : "SET POINT";
-      } else {
-        matchBadge.classList.add('hidden');
+      if (matchBadge) {
+        if (isSetPoint()) {
+          matchBadge.classList.remove('hidden');
+          matchBadge.innerText = isMatchPoint() ? "MATCH POINT" : "SET POINT";
+        } else {
+          matchBadge.classList.add('hidden');
+        }
       }
 
       renderSetHistory();
       applyLayoutSwap();
       applyTheme();
+      applyGiantModeUI();
     }
 
     function updateServeBadges() {
       const btn1 = document.getElementById('serve-team1');
       const btn2 = document.getElementById('serve-team2');
 
-      if (state.server === 'team1') {
-        btn1.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-yellow-400 text-black border-yellow-300";
-        btn2.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-500 border-neutral-800 hover:border-neutral-600";
-      } else {
-        btn2.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-cyan-400 text-black border-cyan-300";
-        btn1.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-500 border-neutral-800 hover:border-neutral-600";
+      if (btn1 && btn2) {
+        if (state.server === 'team1') {
+          btn1.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-yellow-400 text-black border-yellow-300";
+          btn2.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-500 border-neutral-800 hover:border-neutral-600";
+        } else {
+          btn2.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-cyan-400 text-black border-cyan-300";
+          btn1.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-500 border-neutral-800 hover:border-neutral-600";
+        }
+      }
+
+      const dot1 = document.getElementById('giant-serve-dot-team1');
+      const dot2 = document.getElementById('giant-serve-dot-team2');
+      if (dot1 && dot2 && state.isGiantMode) {
+        dot1.classList.toggle('hidden', state.server !== 'team1');
+        dot2.classList.toggle('hidden', state.server !== 'team2');
       }
     }
 
@@ -769,11 +889,14 @@
     }
 
     function applyLayoutSwap() {
+      if (state.isGiantMode) return;
       const container = document.getElementById('scoreboard-container');
-      if (state.isSwapped) {
-        container.classList.add('flex-col-reverse', 'md:flex-row-reverse');
-      } else {
-        container.classList.remove('flex-col-reverse', 'md:flex-row-reverse');
+      if (container) {
+        if (state.isSwapped) {
+          container.classList.add('flex-col-reverse', 'md:flex-row-reverse');
+        } else {
+          container.classList.remove('flex-col-reverse', 'md:flex-row-reverse');
+        }
       }
     }
 
@@ -975,11 +1098,7 @@
     }
 
     function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => console.warn(err));
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-      }
+      toggleGiantScoreMode();
     }
 
     function showToast(message) {
@@ -993,7 +1112,7 @@
         toast._timeout = setTimeout(() => {
           toast.classList.remove('opacity-100');
           toast.classList.add('opacity-0');
-        }, 2200);
+        }, 2000);
       }
     }
 

@@ -2,6 +2,7 @@ package com.volleyball.scoreboard
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -110,7 +111,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 KeyEvent.KEYCODE_PAGE_UP,
                 KeyEvent.KEYCODE_BUTTON_A,
                 KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                    triggerTeamScore("team1", "Button 1 (${event.keyCode})")
+                    triggerTeamScore("team1", "Button 1")
                     return true
                 }
 
@@ -122,7 +123,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 KeyEvent.KEYCODE_MEDIA_NEXT,
                 KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
                 KeyEvent.KEYCODE_HEADSETHOOK -> {
-                    triggerTeamScore("team2", "Button 2 (${event.keyCode})")
+                    triggerTeamScore("team2", "Button 2")
                     return true
                 }
             }
@@ -146,6 +147,20 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 "if (window.handleNativeRemoteClick) { window.handleNativeRemoteClick('$team', '$source'); }",
                 null
             )
+        }
+    }
+
+    fun setOrientationNative(mode: String) {
+        runOnUiThread {
+            try {
+                when (mode.lowercase()) {
+                    "landscape" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    "portrait" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    else -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -221,6 +236,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         @JavascriptInterface
         fun vibrate(duration: Long) {
             activity.vibratePhone(duration)
+        }
+
+        @JavascriptInterface
+        fun setOrientation(mode: String) {
+            activity.setOrientationNative(mode)
         }
     }
 }
