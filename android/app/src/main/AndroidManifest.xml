@@ -15,7 +15,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="orientation|screenSize|keyboardHidden|keyboard"
+            android:configChanges="orientation|screenSize|keyboardHidden|keyboard|screenLayout|smallestScreenSize"
             android:theme="@style/Theme.BeachVolleyballScoreboard.Fullscreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

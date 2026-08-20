@@ -15,6 +15,7 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -30,56 +31,77 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        try {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
-        // Keep screen awake at all times during match
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        setContentView(R.layout.activity_main)
 
-        // Fullscreen immersive mode
-        hideSystemUI()
-
-        // Init TextToSpeech
-        tts = TextToSpeech(this, this)
+        // Safe TextToSpeech init
+        try {
+            tts = TextToSpeech(applicationContext, this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         // Setup WebView
-        webView = WebView(this).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.databaseEnabled = true
-            settings.allowFileAccess = true
-            settings.allowContentAccess = true
-            settings.cacheMode = WebSettings.LOAD_DEFAULT
-            webViewClient = WebViewClient()
+        webView = findViewById(R.id.webView)
+        webView.apply {
+            setBackgroundColor(0xFF000000.toInt())
+            settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                allowFileAccess = true
+                allowContentAccess = true
+                loadWithOverviewMode = true
+                useWideViewPort = true
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                }
+            }
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    return false
+                }
+            }
             webChromeClient = WebChromeClient()
             addJavascriptInterface(WebAppInterface(this@MainActivity), "AndroidNative")
             loadUrl("file:///android_asset/index.html")
         }
-
-        setContentView(webView)
     }
 
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale.US
-            tts?.setSpeechRate(1.05f)
-            isTtsReady = true
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            hideSystemUI()
         }
     }
 
-    /**
-     * NATIVE HARDWARE KEY INTERCEPTION:
-     * Intercepts physical Volume and Shutter clicker buttons from AB Shutter 3.
-     * Returning TRUE consumes the event so Android NEVER changes the audio volume or shows the volume slider!
-     */
+    override fun onInit(status: Int) {
+        try {
+            if (status == TextToSpeech.SUCCESS) {
+                tts?.language = Locale.US
+                tts?.setSpeechRate(1.05f)
+                isTtsReady = true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_VOLUME_UP -> {
                     triggerTeamScore("team1", "VolumeUp")
-                    return true // Consumed - blocks Android volume popup!
+                    return true
                 }
                 KeyEvent.KEYCODE_VOLUME_DOWN -> {
                     triggerTeamScore("team2", "VolumeDown")
-                    return true // Consumed - blocks Android volume popup!
+                    return true
                 }
                 KeyEvent.KEYCODE_CAMERA, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER -> {
                     triggerTeamScore("team1", "ShutterButton1")
@@ -104,15 +126,19 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun triggerTeamScore(team: String, source: String) {
         runOnUiThread {
             webView.evaluateJavascript(
-                "window.handleNativeRemoteClick && window.handleNativeRemoteClick('$team', '$source');",
+                "if (window.handleNativeRemoteClick) { window.handleNativeRemoteClick('$team', '$source'); }",
                 null
             )
         }
     }
 
     fun speakText(text: String) {
-        if (isTtsReady) {
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "score_announcement")
+        try {
+            if (isTtsReady && tts != null) {
+                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "score_${System.currentTimeMillis()}")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -137,27 +163,35 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun hideSystemUI() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.let {
-                it.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.insetsController?.let {
+                    it.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                    it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_FULLSCREEN
+                )
             }
-        } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-            )
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     override fun onDestroy() {
-        tts?.stop()
-        tts?.shutdown()
+        try {
+            tts?.stop()
+            tts?.shutdown()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         super.onDestroy()
     }
 
