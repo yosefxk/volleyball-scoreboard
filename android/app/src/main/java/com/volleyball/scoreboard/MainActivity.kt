@@ -40,14 +40,12 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         setContentView(R.layout.activity_main)
 
-        // Safe TextToSpeech init
         try {
             tts = TextToSpeech(applicationContext, this)
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        // Setup WebView
         webView = findViewById(R.id.webView)
         webView.apply {
             setBackgroundColor(0xFF000000.toInt())
@@ -65,6 +63,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     return false
+                }
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    view?.evaluateJavascript("if (window.setNativeAndroidMode) { window.setNativeAndroidMode(true); }", null)
                 }
             }
             webChromeClient = WebChromeClient()
@@ -92,30 +94,45 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    /**
+     * NATIVE HARDWARE KEY INTERCEPTOR:
+     * Directly captures all AB Shutter 3 / Bluetooth selfie remote keys.
+     * Returning TRUE consumes the event so Android volume slider NEVER appears!
+     */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN) {
             when (event.keyCode) {
-                KeyEvent.KEYCODE_VOLUME_UP -> {
-                    triggerTeamScore("team1", "VolumeUp")
+                // Team A Triggers (iOS Button / Big Button / Volume Up / Camera / Enter / PageUp)
+                KeyEvent.KEYCODE_VOLUME_UP,
+                KeyEvent.KEYCODE_CAMERA,
+                KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_PAGE_UP,
+                KeyEvent.KEYCODE_BUTTON_A,
+                KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
+                    triggerTeamScore("team1", "Button 1 (${event.keyCode})")
                     return true
                 }
-                KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                    triggerTeamScore("team2", "VolumeDown")
-                    return true
-                }
-                KeyEvent.KEYCODE_CAMERA, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER -> {
-                    triggerTeamScore("team1", "ShutterButton1")
-                    return true
-                }
-                KeyEvent.KEYCODE_MEDIA_NEXT, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
-                    triggerTeamScore("team2", "ShutterButton2")
+
+                // Team B Triggers (Android Button / Small Button / Volume Down / Space / PageDown / Media)
+                KeyEvent.KEYCODE_VOLUME_DOWN,
+                KeyEvent.KEYCODE_SPACE,
+                KeyEvent.KEYCODE_PAGE_DOWN,
+                KeyEvent.KEYCODE_BUTTON_B,
+                KeyEvent.KEYCODE_MEDIA_NEXT,
+                KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+                KeyEvent.KEYCODE_HEADSETHOOK -> {
+                    triggerTeamScore("team2", "Button 2 (${event.keyCode})")
                     return true
                 }
             }
         } else if (event.action == KeyEvent.ACTION_UP) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN,
-                KeyEvent.KEYCODE_CAMERA, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER -> {
+                KeyEvent.KEYCODE_CAMERA, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_SPACE, KeyEvent.KEYCODE_PAGE_UP, KeyEvent.KEYCODE_PAGE_DOWN,
+                KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_BUTTON_B,
+                KeyEvent.KEYCODE_MEDIA_NEXT, KeyEvent.KEYCODE_MEDIA_PREVIOUS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
                     return true
                 }
             }

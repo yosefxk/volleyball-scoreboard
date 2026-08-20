@@ -100,11 +100,6 @@
 </head>
 <body class="h-full w-full bg-black text-white font-display overflow-hidden flex flex-col justify-between select-none">
 
-  <!-- HIDDEN AUDIO ELEMENT FOR MEDIA SESSION API -->
-  <audio id="silent-audio-driver" loop preload="auto">
-    <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" type="audio/wav">
-  </audio>
-
   <!-- TOP APP BAR -->
   <header class="w-full bg-neutral-950/90 border-b-2 border-neutral-800 z-30 px-3 py-2 flex items-center justify-between gap-2">
     <!-- Left: Match Info & Set Counter -->
@@ -114,7 +109,6 @@
         <span id="set-indicator-text">SET 1</span>
       </span>
       <div id="set-history-container" class="hidden sm:flex items-center gap-1.5 text-xs text-neutral-400 font-mono">
-        <!-- Set History Badges -->
       </div>
     </div>
 
@@ -127,16 +121,10 @@
 
     <!-- Right: Quick Controls -->
     <div class="flex items-center gap-1.5">
-      <!-- Direct Bluetooth Pairing Button -->
-      <button id="btn-bluetooth-pair" onclick="requestDirectBluetooth()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-cyan-400 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Pair Bluetooth Clicker Directly">
-        <span id="ble-status-dot" class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse"></span>
-        <span id="ble-btn-text" class="hidden sm:inline">Pair Remote</span>
-      </button>
-
-      <!-- Screen Wake Lock Toggle -->
-      <button id="btn-wakelock" onclick="toggleWakeLock()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Screen Wake Lock: Keep Screen ON">
-        <span id="wakelock-icon" class="w-2.5 h-2.5 rounded-full bg-neutral-500 inline-block"></span>
-        <span id="wakelock-text" class="hidden md:inline">Wake Lock</span>
+      <!-- Remote Status / Help Button -->
+      <button onclick="handleRemoteButtonClick()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-cyan-400 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Remote Status">
+        <span id="remote-indicator-dot" class="w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block"></span>
+        <span id="remote-indicator-text" class="hidden sm:inline">Remote Active</span>
       </button>
 
       <!-- Web Speech Announcer Toggle -->
@@ -202,13 +190,8 @@
   <!-- LIVE EVENT DEBUG STATUS BAR -->
   <div id="debug-status-bar" class="w-full bg-neutral-950 border-b border-neutral-800 px-3 py-1 text-[11px] font-mono text-neutral-400 flex items-center justify-between">
     <div class="flex items-center gap-2 truncate">
-      <span id="debug-indicator" class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
-      <span id="live-debug-text">Ready. Click remote button or tap team card...</span>
-    </div>
-    <div class="flex items-center gap-2 shrink-0">
-      <button onclick="openKeymapModal()" class="text-cyan-400 underline hover:text-cyan-300 text-[10px]">
-        Config
-      </button>
+      <span id="debug-indicator" class="w-2 h-2 rounded-full bg-green-400 inline-block shadow-[0_0_6px_#22c55e]"></span>
+      <span id="live-debug-text">Remote Ready: Press Button 1 (Team A) or Button 2 (Team B)</span>
     </div>
   </div>
 
@@ -243,7 +226,7 @@
           0
         </div>
         <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
-          Tap / Remote = +1 &nbsp;|&nbsp; Double Tap = -1
+          Button 1 / Tap = +1 &nbsp;|&nbsp; Double Click = -1
         </div>
       </div>
 
@@ -253,8 +236,8 @@
           −
         </button>
 
-        <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span id="hint-key-team1" class="text-yellow-400 font-bold">Button 1</span>
+        <div class="px-2.5 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
+          <span class="text-yellow-400 font-bold">Button 1 (iOS / Vol+)</span>
         </div>
 
         <button onclick="incrementScore('team1', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-yellow-300" title="Add 1 point">
@@ -291,7 +274,7 @@
           0
         </div>
         <div class="text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
-          Tap / Remote = +1 &nbsp;|&nbsp; Double Tap = -1
+          Button 2 / Tap = +1 &nbsp;|&nbsp; Double Click = -1
         </div>
       </div>
 
@@ -301,8 +284,8 @@
           −
         </button>
 
-        <div class="px-2 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span id="hint-key-team2" class="text-cyan-400 font-bold">Button 2</span>
+        <div class="px-2.5 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
+          <span class="text-cyan-400 font-bold">Button 2 (Android / Vol−)</span>
         </div>
 
         <button onclick="incrementScore('team2', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-cyan-300" title="Add 1 point">
@@ -340,7 +323,7 @@
 
   <!-- ==================== MODALS ==================== -->
 
-  <!-- 1. BLUETOOTH REMOTE MAPPING & DIAGNOSTICS MODAL -->
+  <!-- 1. BLUETOOTH REMOTE INFO MODAL -->
   <div id="modal-keymap" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-neutral-900 border-2 border-cyan-400/80 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl text-white my-auto max-h-[90vh] overflow-y-auto no-scrollbar">
       <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
@@ -353,61 +336,24 @@
         <button onclick="closeKeymapModal()" class="text-neutral-400 hover:text-white text-2xl font-black">✕</button>
       </div>
 
-      <!-- Bluetooth Connection Status Banner -->
-      <div class="p-3.5 bg-gradient-to-r from-cyan-950/80 to-blue-950/80 rounded-xl border border-cyan-500/50 mb-4 flex items-center justify-between gap-3">
-        <div>
-          <div class="text-xs font-black uppercase text-cyan-300" id="ble-modal-status-text">Bluetooth: Ready to Pair</div>
-          <div class="text-[11px] text-neutral-300 mt-0.5" id="ble-modal-sub-text">Click below to connect directly to your AB Shutter3.</div>
+      <div class="p-3.5 bg-gradient-to-r from-green-950/80 to-cyan-950/80 rounded-xl border border-green-500/50 mb-4">
+        <div class="text-xs font-black uppercase text-green-300 flex items-center gap-1.5 mb-1">
+          <span class="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e]"></span>
+          Native Android Key Interception Active
         </div>
-        <button onclick="requestDirectBluetooth()" class="px-3.5 py-2 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow active:scale-95 transition whitespace-nowrap">
-          Pair / Reconnect
-        </button>
-      </div>
-
-      <!-- Key Mapping Controls -->
-      <div class="space-y-3 mb-4">
-        <!-- Team A Button -->
-        <div class="p-3 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
-          <div>
-            <div class="text-xs uppercase font-black text-yellow-400" id="keymap-label-team1">Team A Button</div>
-            <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
-              Mapped: <span id="keymap-code-team1" class="text-yellow-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Button 1 (iOS / Enter)</span>
-            </div>
-          </div>
-          <button id="btn-record-team1" onclick="startKeyRecording('team1')" class="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
-            Learn Button
-          </button>
-        </div>
-
-        <!-- Team B Button -->
-        <div class="p-3 bg-black/60 rounded-xl border border-neutral-800 flex items-center justify-between gap-3">
-          <div>
-            <div class="text-xs uppercase font-black text-cyan-400" id="keymap-label-team2">Team B Button</div>
-            <div class="text-[11px] text-neutral-400 font-mono mt-0.5">
-              Mapped: <span id="keymap-code-team2" class="text-cyan-300 font-bold bg-neutral-800 px-1.5 py-0.5 rounded">Button 2 (Android / Vol)</span>
-            </div>
-          </div>
-          <button id="btn-record-team2" onclick="startKeyRecording('team2')" class="px-3 py-1.5 bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs uppercase rounded-lg shadow transition active:scale-95">
-            Learn Button
-          </button>
+        <p class="text-[11px] text-neutral-300 leading-relaxed">
+          The app intercepts your AB Shutter remote at the hardware level. Simply pair your shutter in Android Settings → Bluetooth, then click:
+        </p>
+        <div class="mt-2 text-xs font-mono font-bold text-yellow-300 space-y-1">
+          <div>• <strong>Button 1 (iOS / Big Button)</strong> → +1 for Team A</div>
+          <div>• <strong>Button 2 (Android / Small Button)</strong> → +1 for Team B</div>
+          <div>• <strong>Rapid Double Click (&lt;400ms)</strong> → −1 (Undo)</div>
         </div>
       </div>
 
-      <!-- Live Diagnostics Feedback Box -->
-      <div class="p-3 bg-neutral-950 rounded-xl border border-dashed border-neutral-700 mb-4 text-center">
-        <div class="text-[10px] uppercase tracking-wider text-neutral-400 font-bold mb-1">Live Clicker Signal Detector</div>
-        <div id="key-test-feedback" class="text-xs font-mono font-bold text-neutral-300 py-1">
-          Click any button on your shutter remote to test...
-        </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800">
-        <button onclick="resetKeymapDefaults()" class="text-xs text-neutral-400 hover:text-neutral-200 underline">
-          Reset Defaults
-        </button>
+      <div class="pt-2 border-t border-neutral-800 flex justify-end">
         <button onclick="closeKeymapModal()" class="px-5 py-2 bg-neutral-700 hover:bg-neutral-600 text-white font-black text-xs uppercase rounded-xl transition">
-          Done
+          Got It
         </button>
       </div>
     </div>
@@ -472,9 +418,7 @@
        BEACH VOLLEYBALL SCOREBOARD - CORE STATE & ENGINE
        ========================================================================== */
 
-    const STATE_KEY = 'vb_scoreboard_state_v5';
-    const KEYMAP_KEY = 'vb_scoreboard_keymap_v5';
-    const BLEMAP_KEY = 'vb_scoreboard_blemap_v5';
+    const STATE_KEY = 'vb_scoreboard_state_v6';
 
     let state = {
       team1: { name: 'TEAM A', score: 0, sets: 0 },
@@ -485,44 +429,19 @@
       switchInterval: 7,
       isSwapped: false,
       voiceEnabled: true,
-      wakeLockEnabled: false,
       theme: 'neon',
       setHistory: [],
-    };
-
-    let keymap = {
-      team1: ['Enter', 'NumpadEnter', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'AudioVolumeUp', 'VolumeUp'],
-      team2: ['Space', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'AudioVolumeDown', 'VolumeDown', 'MediaPlayPause'],
-    };
-
-    let bleMap = {
-      team1: null,
-      team2: null,
     };
 
     const clickTimers = { team1: null, team2: null };
     const lastClickTimes = { team1: 0, team2: 0 };
     const DOUBLE_CLICK_WINDOW_MS = 400;
     const historyStack = [];
-    let wakeLockSentinel = null;
-    let recordingTarget = null;
-    let lastGamepadButtonState = {};
-    let connectedBluetoothDevice = null;
 
     function initApp() {
       loadSavedState();
-      loadSavedKeymap();
       renderUI();
       setupKeyListeners();
-      setupMediaSession();
-      setupGamepadPolling();
-      setupVisibilityListener();
-      startSilentAudioDriver();
-
-      if (!('wakeLock' in navigator)) {
-        const btnWake = document.getElementById('btn-wakelock');
-        if (btnWake) btnWake.title = "Screen Wake Lock API not supported on this browser";
-      }
     }
 
     function saveState() {
@@ -544,250 +463,27 @@
       }
     }
 
-    function saveKeymap() {
-      try {
-        localStorage.setItem(KEYMAP_KEY, JSON.stringify(keymap));
-        localStorage.setItem(BLEMAP_KEY, JSON.stringify(bleMap));
-      } catch (e) {
-        console.warn('Keymap save failed:', e);
-      }
-    }
-
-    function loadSavedKeymap() {
-      try {
-        const savedKey = localStorage.getItem(KEYMAP_KEY);
-        if (savedKey) keymap = { ...keymap, ...JSON.parse(savedKey) };
-        const savedBle = localStorage.getItem(BLEMAP_KEY);
-        if (savedBle) bleMap = { ...bleMap, ...JSON.parse(savedBle) };
-      } catch (e) {
-        console.warn('Keymap load failed:', e);
-      }
-    }
-
     /* ==========================================================================
-       DIRECT WEB BLUETOOTH WITH GATT NOTIFICATION SUBSCRIPTIONS
+       NATIVE ANDROID BRIDGE (TRIGGERED BY MAINACTIVITY DISPATCHKEYEVENT)
        ========================================================================== */
 
-    async function requestDirectBluetooth() {
-      if (!('bluetooth' in navigator)) {
-        alert("Web Bluetooth API is not supported in this browser. Please open over HTTPS on Chrome.");
-        return;
-      }
+    window.handleNativeRemoteClick = function(team, source) {
+      logRemoteDiagnostic(`⚡ Click Registered: [${source}] → ${state[team].name}`);
+      triggerTeamScoring(team);
+    };
 
-      try {
-        logRemoteDiagnostic("Scanning for Bluetooth clickers...");
-        const device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: [
-            'human_interface_device', 
-            0x1812, 
-            'generic_access', 
-            0x1800, 
-            'battery_service', 
-            0x180F,
-            'generic_attribute', 
-            0x1801,
-            'device_information',
-            0x180A
-          ]
-        });
-
-        connectedBluetoothDevice = device;
-        logRemoteDiagnostic(`Connecting to: ${device.name || 'AB Shutter3'}...`);
-
-        device.addEventListener('gattserverdisconnected', () => {
-          logRemoteDiagnostic(`Bluetooth Remote Disconnected.`);
-          updateBleUI(false);
-          showToast("Bluetooth Remote Disconnected");
-        });
-
-        const server = await device.gatt.connect();
-        logRemoteDiagnostic(`Connected! Subscribing to button notifications...`);
-
-        let activeChannels = 0;
-
-        try {
-          const services = await server.getPrimaryServices();
-          for (const service of services) {
-            try {
-              const characteristics = await service.getCharacteristics();
-              for (const char of characteristics) {
-                if (char.properties.notify || char.properties.indicate) {
-                  try {
-                    await char.startNotifications();
-                    char.addEventListener('characteristicvaluechanged', (event) => {
-                      handleBleNotification(event.target.value);
-                    });
-                    activeChannels++;
-                  } catch (e) {
-                    console.log("Could not start notification on char:", char.uuid, e);
-                  }
-                }
-              }
-            } catch (err) {
-              console.log("Could not get characteristics for service:", service.uuid);
-            }
-          }
-        } catch (err) {
-          console.warn("Service enumeration error:", err);
-        }
-
-        updateBleUI(true, device.name || 'AB Shutter3');
-        logRemoteDiagnostic(`✓ Ready! Connected to ${device.name || 'AB Shutter3'} (${activeChannels} channels active)`);
-        showToast(`Connected to ${device.name || 'AB Shutter3'}! Click to score.`);
-      } catch (err) {
-        console.warn("Bluetooth connection error:", err);
-        logRemoteDiagnostic(`Bluetooth: ${err.message}`);
-      }
-    }
-
-    function handleBleNotification(dataView) {
-      const bytes = [];
-      for (let i = 0; i < dataView.byteLength; i++) {
-        bytes.push(dataView.getUint8(i));
-      }
-
-      // Check if release (all 0s)
-      const isRelease = bytes.every(b => b === 0);
-      const signature = bytes.join(',');
-
-      logRemoteDiagnostic(`BLE Signal: [${bytes.map(b => '0x' + b.toString(16).padStart(2,'0')).join(' ')}]`);
-
-      if (isRelease) return;
-
-      // If recording target in modal
-      if (recordingTarget) {
-        bleMap[recordingTarget] = signature;
-        saveKeymap();
-        logRemoteDiagnostic(`✓ Learned ${state[recordingTarget].name}: [${signature}]`);
-        showToast(`Learned button for ${state[recordingTarget].name}!`);
-        stopKeyRecording();
-        renderUI();
-        return;
-      }
-
-      // If explicit mapping matches
-      if (bleMap.team1 && bleMap.team1 === signature) {
-        triggerTeamScoring('team1');
-        return;
-      }
-      if (bleMap.team2 && bleMap.team2 === signature) {
-        triggerTeamScoring('team2');
-        return;
-      }
-
-      // Smart Default Heuristics for AB Shutter 3 & selfie clickers
-      // Button 1 (iOS) usually has byte[0]=1 or byte[2]=40 or byte[1]=1
-      // Button 2 (Android) usually has byte[0]=2 or byte[2]=233 (0xe9) or byte[1]=2
-      const firstNonZero = bytes.find(b => b !== 0) || 0;
-      if (bytes[0] === 1 || bytes[1] === 1 || firstNonZero === 1 || firstNonZero === 0x28 || firstNonZero === 40) {
-        triggerTeamScoring('team1');
-      } else {
-        triggerTeamScoring('team2');
-      }
-    }
-
-    function updateBleUI(connected, name = '') {
-      const dot = document.getElementById('ble-status-dot');
-      const text = document.getElementById('ble-btn-text');
-      const modalText = document.getElementById('ble-modal-status-text');
-      const modalSub = document.getElementById('ble-modal-sub-text');
-
-      if (connected) {
+    window.setNativeAndroidMode = function(isActive) {
+      const dot = document.getElementById('remote-indicator-dot');
+      const text = document.getElementById('remote-indicator-text');
+      if (isActive) {
         if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block";
-        if (text) text.innerText = name ? `✓ ${name}` : 'Connected';
-        if (modalText) modalText.innerText = `Bluetooth: Connected to ${name || 'Remote'}`;
-        if (modalSub) modalSub.innerText = "Button notifications are actively listening.";
-      } else {
-        if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block animate-pulse";
-        if (text) text.innerText = "Pair Remote";
-        if (modalText) modalText.innerText = "Bluetooth: Ready to Pair";
-        if (modalSub) modalSub.innerText = "Click below to connect directly to your AB Shutter3.";
+        if (text) text.innerText = "Remote Ready";
+        logRemoteDiagnostic("✓ Android Native Remote Ready: Click shutter buttons to score");
       }
-    }
+    };
 
-    /* ==========================================================================
-       MEDIA SESSION API & SILENT AUDIO DRIVER
-       ========================================================================== */
-
-    function startSilentAudioDriver() {
-      const audio = document.getElementById('silent-audio-driver');
-      if (audio) {
-        const start = () => {
-          audio.play().catch(e => console.log("Audio waiting for user gesture"));
-          window.removeEventListener('click', start);
-          window.removeEventListener('touchstart', start);
-        };
-        window.addEventListener('click', start);
-        window.addEventListener('touchstart', start);
-      }
-    }
-
-    function setupMediaSession() {
-      if (!('mediaSession' in navigator)) return;
-
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: 'Beach Volleyball Scoreboard',
-        artist: 'Scorekeeper Remote Controller',
-        album: 'Live Match',
-      });
-
-      const handleMediaAction = (team, actionName) => {
-        logRemoteDiagnostic(`MediaSession: [${actionName}] → ${state[team].name}`);
-        triggerTeamScoring(team);
-      };
-
-      try {
-        navigator.mediaSession.setActionHandler('previoustrack', () => handleMediaAction('team1', 'Prev Track'));
-        navigator.mediaSession.setActionHandler('nexttrack', () => handleMediaAction('team2', 'Next Track'));
-        navigator.mediaSession.setActionHandler('seekbackward', () => handleMediaAction('team1', 'Seek Back'));
-        navigator.mediaSession.setActionHandler('seekforward', () => handleMediaAction('team2', 'Seek Fwd'));
-        navigator.mediaSession.setActionHandler('play', () => handleMediaAction('team1', 'Play'));
-        navigator.mediaSession.setActionHandler('pause', () => handleMediaAction('team2', 'Pause'));
-      } catch (e) {
-        console.warn("MediaSession action handler error:", e);
-      }
-    }
-
-    /* ==========================================================================
-       GAMEPAD API (FOR VR / 8BITDO / MINI CLICKERS IN GAME MODE)
-       ========================================================================== */
-
-    function setupGamepadPolling() {
-      function pollGamepads() {
-        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-        for (let i = 0; i < gamepads.length; i++) {
-          const gp = gamepads[i];
-          if (!gp) continue;
-
-          gp.buttons.forEach((btn, btnIdx) => {
-            const isPressed = btn.pressed || btn.value > 0.5;
-            const prev = lastGamepadButtonState[`${i}_${btnIdx}`] || false;
-
-            if (isPressed && !prev) {
-              logRemoteDiagnostic(`Gamepad Button ${btnIdx} Pressed`);
-              if (recordingTarget) {
-                const codeName = `Gamepad_B${btnIdx}`;
-                if (!keymap[recordingTarget].includes(codeName)) {
-                  keymap[recordingTarget].push(codeName);
-                  saveKeymap();
-                }
-                stopKeyRecording();
-                renderUI();
-              } else {
-                if (btnIdx === 0 || btnIdx === 2 || btnIdx === 4 || btnIdx === 14) {
-                  triggerTeamScoring('team1');
-                } else if (btnIdx === 1 || btnIdx === 3 || btnIdx === 5 || btnIdx === 15) {
-                  triggerTeamScoring('team2');
-                }
-              }
-            }
-            lastGamepadButtonState[`${i}_${btnIdx}`] = isPressed;
-          });
-        }
-        requestAnimationFrame(pollGamepads);
-      }
-      requestAnimationFrame(pollGamepads);
+    function handleRemoteButtonClick() {
+      openKeymapModal();
     }
 
     /* ==========================================================================
@@ -853,7 +549,10 @@
         state.server = team;
       }
 
-      if ('vibrate' in navigator) {
+      // Native Vibration
+      if (window.AndroidNative && window.AndroidNative.vibrate) {
+        window.AndroidNative.vibrate(delta > 0 ? 40 : 80);
+      } else if ('vibrate' in navigator) {
         navigator.vibrate(delta > 0 ? 40 : [30, 40, 30]);
       }
 
@@ -877,14 +576,11 @@
     }
 
     /* ==========================================================================
-       WEB SPEECH API ANNOUNCER
+       TEXT-TO-SPEECH ANNOUNCER (NATIVE & WEB SPEECH)
        ========================================================================== */
 
     function announceScore() {
       if (!state.voiceEnabled) return;
-      if (!('speechSynthesis' in window)) return;
-
-      window.speechSynthesis.cancel();
 
       const serverTeam = state.server;
       const receiverTeam = serverTeam === 'team1' ? 'team2' : 'team1';
@@ -908,15 +604,24 @@
         announcement = `Set point. ${announcement}`;
       }
 
-      const utterance = new SpeechSynthesisUtterance(announcement);
-      utterance.rate = 1.05;
-      utterance.pitch = 1.0;
-      utterance.lang = 'en-US';
+      // Use Native Android TextToSpeech if in APK
+      if (window.AndroidNative && window.AndroidNative.speak) {
+        window.AndroidNative.speak(announcement);
+        return;
+      }
 
-      try {
-        window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        console.warn('Speech synthesis error:', err);
+      // Web Speech Fallback for browser
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(announcement);
+        utterance.rate = 1.05;
+        utterance.pitch = 1.0;
+        utterance.lang = 'en-US';
+        try {
+          window.speechSynthesis.speak(utterance);
+        } catch (err) {
+          console.warn('Speech error:', err);
+        }
       }
     }
 
@@ -934,77 +639,6 @@
       state.voiceEnabled = enabled;
       saveState();
       renderUI();
-    }
-
-    /* ==========================================================================
-       SCREEN WAKE LOCK API
-       ========================================================================== */
-
-    async function toggleWakeLock() {
-      if (!('wakeLock' in navigator)) {
-        alert("Screen Wake Lock is not supported on this browser/device.");
-        return;
-      }
-
-      if (state.wakeLockEnabled && wakeLockSentinel) {
-        try {
-          await wakeLockSentinel.release();
-          wakeLockSentinel = null;
-          state.wakeLockEnabled = false;
-          showToast("Wake Lock Released (Screen may sleep)");
-        } catch (err) {
-          console.error("WakeLock release error:", err);
-        }
-      } else {
-        try {
-          wakeLockSentinel = await navigator.wakeLock.request('screen');
-          state.wakeLockEnabled = true;
-          wakeLockSentinel.addEventListener('release', () => {
-            state.wakeLockEnabled = false;
-            updateWakeLockUI();
-          });
-          showToast("Wake Lock ACTIVE: Screen will stay ON");
-        } catch (err) {
-          console.error("WakeLock request error:", err);
-          showToast("Wake Lock failed to activate");
-        }
-      }
-      saveState();
-      updateWakeLockUI();
-    }
-
-    function setupVisibilityListener() {
-      document.addEventListener('visibilitychange', async () => {
-        if (wakeLockSentinel !== null && document.visibilityState === 'visible' && state.wakeLockEnabled) {
-          try {
-            wakeLockSentinel = await navigator.wakeLock.request('screen');
-          } catch (e) {
-            console.warn("Re-acquiring WakeLock failed:", e);
-          }
-        }
-      });
-    }
-
-    function updateWakeLockUI() {
-      const icon = document.getElementById('wakelock-icon');
-      const text = document.getElementById('wakelock-text');
-      const btn = document.getElementById('btn-wakelock');
-
-      if (state.wakeLockEnabled) {
-        if (icon) icon.className = "w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block";
-        if (text) text.innerText = "Awake ON";
-        if (btn) {
-          btn.classList.add('border-green-500/80', 'text-green-300');
-          btn.classList.remove('border-neutral-700', 'text-neutral-300');
-        }
-      } else {
-        if (icon) icon.className = "w-2.5 h-2.5 rounded-full bg-neutral-500 inline-block";
-        if (text) text.innerText = "Wake Lock";
-        if (btn) {
-          btn.classList.remove('border-green-500/80', 'text-green-300');
-          btn.classList.add('border-neutral-700', 'text-neutral-300');
-        }
-      }
     }
 
     /* ==========================================================================
@@ -1029,118 +663,39 @@
     }
 
     /* ==========================================================================
-       KEYBOARD & REMOTE KEY INTERCEPTION ENGINE
+       KEYBOARD LISTENER (FALLBACK FOR BROWSER / KEYPADS)
        ========================================================================== */
 
     function setupKeyListeners() {
-      const interceptHandler = (e) => {
+      window.addEventListener('keydown', (e) => {
         const code = e.code || e.key;
+        logRemoteDiagnostic(`Key: [${code}]`);
 
-        logRemoteDiagnostic(`Key: [${code}] (Key: "${e.key}")`);
-
-        if (recordingTarget) {
+        if (['ArrowLeft', 'KeyA', 'Enter', 'PageUp'].includes(code)) {
           e.preventDefault();
-          e.stopImmediatePropagation();
-
-          if (!keymap[recordingTarget].includes(code)) {
-            keymap[recordingTarget].push(code);
-            saveKeymap();
-          }
-
-          stopKeyRecording();
-          renderUI();
-          return;
-        }
-
-        const isTeam1 = keymap.team1.includes(code) || keymap.team1.includes(e.key);
-        const isTeam2 = keymap.team2.includes(code) || keymap.team2.includes(e.key);
-
-        if (isTeam1 || isTeam2 || ['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'Enter', 'PageUp', 'PageDown'].includes(code)) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-        }
-
-        if (isTeam1) {
           triggerTeamScoring('team1');
-        } else if (isTeam2) {
+        } else if (['ArrowRight', 'KeyB', 'Space', 'PageDown'].includes(code)) {
+          e.preventDefault();
           triggerTeamScoring('team2');
         } else if (code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
           undoGlobal();
         } else if (code === 'KeyS') {
           swapSides();
         }
-      };
-
-      window.addEventListener('keydown', interceptHandler, { capture: true, passive: false });
-      window.addEventListener('keyup', (e) => {
-        if (['AudioVolumeUp', 'AudioVolumeDown', 'VolumeUp', 'VolumeDown'].includes(e.code || e.key)) {
-          e.preventDefault();
-        }
-      }, { capture: true, passive: false });
+      });
     }
 
     function logRemoteDiagnostic(msg) {
       const bar = document.getElementById('live-debug-text');
       if (bar) bar.innerText = msg;
-
-      const testFeedback = document.getElementById('key-test-feedback');
-      if (testFeedback) {
-        testFeedback.innerHTML = `<span class="text-cyan-300 font-bold">⚡ Signal:</span> <code class="bg-neutral-800 px-2 py-0.5 rounded text-white">${msg}</code>`;
-      }
     }
 
     function openKeymapModal() {
-      updateKeymapDisplay();
-      document.getElementById('keymap-label-team1').innerText = `Team A Button (${state.team1.name})`;
-      document.getElementById('keymap-label-team2').innerText = `Team B Button (${state.team2.name})`;
       document.getElementById('modal-keymap').classList.remove('hidden');
     }
 
     function closeKeymapModal() {
-      stopKeyRecording();
       document.getElementById('modal-keymap').classList.add('hidden');
-    }
-
-    function updateKeymapDisplay() {
-      document.getElementById('keymap-code-team1').innerText = bleMap.team1 ? `BLE: [${bleMap.team1}]` : keymap.team1.slice(0, 2).join(' / ');
-      document.getElementById('keymap-code-team2').innerText = bleMap.team2 ? `BLE: [${bleMap.team2}]` : keymap.team2.slice(0, 2).join(' / ');
-    }
-
-    function startKeyRecording(target) {
-      recordingTarget = target;
-      const btn = document.getElementById(`btn-record-${target}`);
-      if (btn) {
-        btn.innerText = 'Click Remote Button...';
-        btn.classList.add('animate-pulse', 'bg-white', 'text-black');
-      }
-      const testFeedback = document.getElementById('key-test-feedback');
-      if (testFeedback) {
-        testFeedback.innerHTML = `<span class="text-cyan-400 animate-pulse font-bold">Listening... Click your shutter remote button now!</span>`;
-      }
-    }
-
-    function stopKeyRecording() {
-      if (recordingTarget) {
-        const btn = document.getElementById(`btn-record-${recordingTarget}`);
-        if (btn) {
-          btn.innerText = 'Learn Button';
-          btn.classList.remove('animate-pulse', 'bg-white', 'text-black');
-        }
-      }
-      recordingTarget = null;
-      updateKeymapDisplay();
-    }
-
-    function resetKeymapDefaults() {
-      keymap = {
-        team1: ['Enter', 'NumpadEnter', 'ArrowLeft', 'ArrowUp', 'KeyA', 'PageUp', 'AudioVolumeUp', 'VolumeUp'],
-        team2: ['Space', 'ArrowRight', 'ArrowDown', 'KeyB', 'PageDown', 'AudioVolumeDown', 'VolumeDown', 'MediaPlayPause'],
-      };
-      bleMap = { team1: null, team2: null };
-      saveKeymap();
-      updateKeymapDisplay();
-      showToast("Mappings reset to standard defaults");
-      renderUI();
     }
 
     /* ==========================================================================
@@ -1166,9 +721,6 @@
 
       updateServeBadges();
 
-      document.getElementById('hint-key-team1').innerText = bleMap.team1 ? 'BLE 1' : (keymap.team1[0] || 'Btn 1');
-      document.getElementById('hint-key-team2').innerText = bleMap.team2 ? 'BLE 2' : (keymap.team2[0] || 'Btn 2');
-
       document.getElementById('voice-icon-on').classList.toggle('hidden', !state.voiceEnabled);
       document.getElementById('voice-icon-off').classList.toggle('hidden', state.voiceEnabled);
       const voiceCheck = document.getElementById('check-voice-announcements');
@@ -1183,7 +735,6 @@
       }
 
       renderSetHistory();
-      updateWakeLockUI();
       applyLayoutSwap();
       applyTheme();
     }
@@ -1311,9 +862,13 @@
       const victoryText = `${winnerName} wins set ${state.currentSet - 1}!`;
       showToast(victoryText);
 
-      if (state.voiceEnabled && ('speechSynthesis' in window)) {
-        const u = new SpeechSynthesisUtterance(victoryText);
-        window.speechSynthesis.speak(u);
+      if (state.voiceEnabled) {
+        if (window.AndroidNative && window.AndroidNative.speak) {
+          window.AndroidNative.speak(victoryText);
+        } else if ('speechSynthesis' in window) {
+          const u = new SpeechSynthesisUtterance(victoryText);
+          window.speechSynthesis.speak(u);
+        }
       }
     }
 
