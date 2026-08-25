@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full w-full">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -10,116 +10,246 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Google Fonts: High-impact athletic typography -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700;900&family=Teko:wght@700&display=swap" rel="stylesheet">
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            score: ['"Teko"', '"Chakra Petch"', 'Impact', 'sans-serif'],
-          },
-          colors: {
-            neonYellow: '#FAFF00',
-            neonCyan: '#00F0FF',
-          },
-          keyframes: {
-            scorePop: {
-              '0%': { transform: 'scale(0.92)' },
-              '50%': { transform: 'scale(1.05)' },
-              '100%': { transform: 'scale(1)' },
-            },
-          },
-          animation: {
-            scorePop: 'scorePop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-          }
-        }
-      }
-    };
-  </script>
-
+  <!-- 100% OFFLINE ZERO-DEPENDENCY STYLES (NO CDN / NO INTERNET REQUIRED) -->
   <style>
     * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
     }
-    
-    /* GIGANTIC SCORE TYPOGRAPHY (Maximal screen fill) */
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000000;
+      color: #FFFFFF;
+      font-family: Impact, -apple-system, BlinkMacSystemFont, "Arial Black", "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* MAIN CONTAINER: 50/50 HORIZONTAL SPLIT */
+    .arena {
+      display: flex;
+      flex-direction: row;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* TEAM SECTIONS */
+    .team-panel {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    #panel-team1 {
+      border-right: 3px solid #1a1a1a;
+    }
+
+    /* GIGANTIC OUTDOOR SUNLIGHT NUMBERS */
     .giant-score {
-      font-size: min(45vw, 90vh);
-      line-height: 0.82;
-      font-feature-settings: "tnum";
+      font-size: min(45vw, 88vh);
+      line-height: 0.85;
+      font-weight: 900;
+      text-align: center;
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 8px 32px rgba(0, 0, 0, 0.95);
+      text-shadow: 0 10px 35px rgba(0, 0, 0, 0.95);
+      transition: transform 0.15s ease-out;
+    }
+
+    .score-team1 {
+      color: #FAFF00; /* High-Vis Neon Yellow */
+    }
+
+    .score-team2 {
+      color: #00F0FF; /* High-Vis Neon Cyan */
+    }
+
+    /* GLOW & FLASH FEEDBACK LAYERS */
+    .glow-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s ease-out, background-color 0.15s ease-out;
+    }
+
+    .flash-pop {
+      animation: scorePop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .flash-white {
+      opacity: 1 !important;
+      background-color: rgba(255, 255, 255, 0.25) !important;
+    }
+
+    .flash-red {
+      opacity: 1 !important;
+      background-color: rgba(220, 38, 38, 0.45) !important;
+    }
+
+    @keyframes scorePop {
+      0% { transform: scale(0.92); }
+      50% { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
+    /* FLOATING SERVE BADGES */
+    .serve-badge {
+      position: absolute;
+      top: 14px;
+      z-index: 30;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #000000;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+      transition: transform 0.1s ease, opacity 0.15s ease;
+    }
+
+    .serve-badge:active {
+      transform: scale(0.92);
+    }
+
+    #serve-badge-team1 {
+      left: 16px;
+      background-color: #FAFF00;
+    }
+
+    #serve-badge-team2 {
+      right: 16px;
+      background-color: #00F0FF;
+    }
+
+    /* FLOATING RESET BUTTON (Top Center) */
+    .reset-btn {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      padding: 6px 18px;
+      border-radius: 9999px;
+      background-color: rgba(24, 24, 27, 0.85);
+      color: #A1A1AA;
+      border: 1px solid #3F3F46;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+      transition: background-color 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    .reset-btn:hover {
+      color: #FFFFFF;
+      background-color: rgba(39, 39, 42, 0.95);
+    }
+
+    .reset-btn:active {
+      transform: translateX(-50%) scale(0.95);
+    }
+
+    /* TOAST NOTIFICATION */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease-in-out;
+      background-color: rgba(24, 24, 27, 0.95);
+      border: 1px solid #FAFF00;
+      color: #FAFF00;
+      padding: 6px 20px;
+      border-radius: 9999px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.9);
+      white-space: nowrap;
+    }
+
+    .toast-show {
+      opacity: 1 !important;
+    }
+
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
-<body class="h-full w-full bg-black text-white font-score overflow-hidden flex flex-col justify-between select-none">
+<body>
 
   <!-- FLOATING RESET BUTTON (Top Center) -->
-  <header class="fixed top-2 left-1/2 -translate-x-1/2 z-40">
-    <button onclick="promptReset()" class="px-4 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 shadow-2xl backdrop-blur-sm text-xs font-black font-sans uppercase tracking-widest transition active:scale-95">
-      Reset Game
-    </button>
-  </header>
+  <button onclick="promptReset()" class="reset-btn">
+    Reset Game
+  </button>
 
   <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200 bg-neutral-900/95 border border-yellow-400 text-yellow-300 px-4 py-1.5 rounded-full text-xs font-sans font-bold shadow-2xl tracking-wide">
+  <div id="toast" class="toast">
     <span id="toast-msg">Score updated</span>
   </div>
 
   <!-- MAIN SCOREBOARD ARENA (Left Half Team A, Right Half Team B) -->
-  <main class="h-full w-full flex flex-row overflow-hidden relative">
+  <main class="arena">
 
     <!-- TEAM A (LEFT HALF - NEON YELLOW) -->
-    <section id="panel-team1" 
-             class="relative flex-1 h-full flex flex-col items-center justify-center border-r-4 border-neutral-900 cursor-pointer overflow-hidden group select-none transition-colors duration-150"
-             onclick="handleScreenClick('team1')">
+    <section id="panel-team1" class="team-panel" onclick="handleScreenClick('team1')">
       
       <!-- Serve Indicator Badge (Team A) -->
-      <div id="serve-badge-team1" 
-           onclick="event.stopPropagation(); toggleServer('team2');" 
-           class="absolute top-3 left-4 z-30 px-3.5 py-1 rounded-full bg-neonYellow text-black font-sans font-black text-xs uppercase tracking-wider shadow-2xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
-           title="Click to switch server">
-        <span class="text-sm">🏐</span>
+      <div id="serve-badge-team1" class="serve-badge" onclick="event.stopPropagation(); toggleServer('team2');" title="Click to switch server">
+        <span>🏐</span>
         <span>SERVE</span>
       </div>
 
-      <!-- Glow & Visual Flash Feedback Layer -->
-      <div id="glow-team1" class="absolute inset-0 bg-yellow-500/5 pointer-events-none transition duration-150"></div>
+      <!-- Visual Flash Feedback Layer -->
+      <div id="glow-team1" class="glow-layer"></div>
       
       <!-- Massive Score Display -->
-      <div id="score-team1" class="giant-score font-bold text-neonYellow text-center tracking-tighter filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.9)]">
+      <div id="score-team1" class="giant-score score-team1">
         0
       </div>
     </section>
 
     <!-- TEAM B (RIGHT HALF - NEON CYAN) -->
-    <section id="panel-team2" 
-             class="relative flex-1 h-full flex flex-col items-center justify-center cursor-pointer overflow-hidden group select-none transition-colors duration-150"
-             onclick="handleScreenClick('team2')">
+    <section id="panel-team2" class="team-panel" onclick="handleScreenClick('team2')">
       
       <!-- Serve Indicator Badge (Team B) -->
-      <div id="serve-badge-team2" 
-           onclick="event.stopPropagation(); toggleServer('team1');" 
-           class="hidden absolute top-3 right-4 z-30 px-3.5 py-1 rounded-full bg-neonCyan text-black font-sans font-black text-xs uppercase tracking-wider shadow-2xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
-           title="Click to switch server">
-        <span class="text-sm">🏐</span>
+      <div id="serve-badge-team2" class="serve-badge hidden" onclick="event.stopPropagation(); toggleServer('team1');" title="Click to switch server">
+        <span>🏐</span>
         <span>SERVE</span>
       </div>
 
-      <!-- Glow & Visual Flash Feedback Layer -->
-      <div id="glow-team2" class="absolute inset-0 bg-cyan-500/5 pointer-events-none transition duration-150"></div>
+      <!-- Visual Flash Feedback Layer -->
+      <div id="glow-team2" class="glow-layer"></div>
 
       <!-- Massive Score Display -->
-      <div id="score-team2" class="giant-score font-bold text-neonCyan text-center tracking-tighter filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.9)]">
+      <div id="score-team2" class="giant-score score-team2">
         0
       </div>
     </section>
@@ -128,14 +258,15 @@
 
   <script>
     /* ==========================================================================
-       DETERMINISTIC SINGLE / DOUBLE CLICK SCORING ENGINE
+       100% OFFLINE DETERMINISTIC BEACH VOLLEYBALL SCORING ENGINE
+       - Zero network requests / Works completely offline
        - Single Click: Exactly +1 (after 380ms)
        - Double Click (<380ms): Exactly -1 (Undo)
        - Cooldown / Debounce: Mathematically blocks cascading +/- glitches
-       - Server Indicator: Moves to whichever team scored +1, or tap to switch
+       - Server Indicator: Moves to scoring team or tap to toggle
        ========================================================================== */
 
-    const STORAGE_KEY = 'vb_scores_simple_v2';
+    const STORAGE_KEY = 'vb_scores_offline_v3';
 
     let currentServer = 'team1'; // 'team1' | 'team2'
 
@@ -205,7 +336,7 @@
     function registerScoreEvent(team) {
       const state = teamState[team];
 
-      // 1. If currently in cooldown lock, completely ignore key bounce or trailing clicks
+      // 1. If currently in cooldown lockout, ignore bounce or trailing clicks
       if (state.status === 'COOLDOWN') {
         return;
       }
@@ -223,7 +354,7 @@
         triggerVisualFeedback(team, 'red');
         triggerHaptic(80);
 
-        // Enter cooldown lockout to prevent any trailing 3rd/4th clicks from triggering +1
+        // Enter cooldown lockout to prevent trailing clicks from triggering +1
         state.status = 'COOLDOWN';
         setTimeout(() => {
           state.status = 'IDLE';
@@ -289,21 +420,21 @@
       const glowEl = document.getElementById(`glow-${team}`);
 
       if (scoreEl) {
-        scoreEl.classList.remove('animate-scorePop');
-        void scoreEl.offsetWidth; // Force reflow
-        scoreEl.classList.add('animate-scorePop');
+        scoreEl.classList.remove('flash-pop');
+        void scoreEl.offsetWidth; // Force DOM reflow
+        scoreEl.classList.add('flash-pop');
       }
 
       if (glowEl) {
         if (type === 'red') {
-          glowEl.className = 'absolute inset-0 bg-red-600/40 pointer-events-none transition duration-150';
+          glowEl.className = 'glow-layer flash-red';
           setTimeout(() => {
-            glowEl.className = `absolute inset-0 ${team === 'team1' ? 'bg-yellow-500/5' : 'bg-cyan-500/5'} pointer-events-none transition duration-150`;
+            glowEl.className = 'glow-layer';
           }, 250);
         } else {
-          glowEl.className = 'absolute inset-0 bg-white/20 pointer-events-none transition duration-100';
+          glowEl.className = 'glow-layer flash-white';
           setTimeout(() => {
-            glowEl.className = `absolute inset-0 ${team === 'team1' ? 'bg-yellow-500/5' : 'bg-cyan-500/5'} pointer-events-none transition duration-100`;
+            glowEl.className = 'glow-layer';
           }, 120);
         }
       }
@@ -319,7 +450,7 @@
 
     function promptReset() {
       if (confirm("Reset score to 0 - 0?")) {
-        // Clear any pending timers
+        // Clear pending timers
         clearTimeout(teamState.team1.timer);
         clearTimeout(teamState.team2.timer);
         teamState.team1.timer = null;
@@ -341,12 +472,10 @@
       const text = document.getElementById('toast-msg');
       if (toast && text) {
         text.innerText = msg;
-        toast.classList.remove('opacity-0');
-        toast.classList.add('opacity-100');
+        toast.classList.add('toast-show');
         clearTimeout(toast._timeout);
         toast._timeout = setTimeout(() => {
-          toast.classList.remove('opacity-100');
-          toast.classList.add('opacity-0');
+          toast.classList.remove('toast-show');
         }, 1500);
       }
     }
