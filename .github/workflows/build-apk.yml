@@ -25,27 +25,37 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Build Signed APK with Gradle
+      - name: Build Signed APKs
         env:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
           cd android
           chmod +x ./gradlew || true
           gradle wrapper
-          ./gradlew assembleRelease --stacktrace || ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug assembleRelease --stacktrace
 
-      - name: Locate APK
-        id: apk-path
+      - name: Prepare and Verify APKs
+        id: prep
         run: |
-          APK_FILE=$(find android/app/build/outputs/apk -name "*.apk" | head -n 1)
-          echo "Found APK: $APK_FILE"
-          echo "path=$APK_FILE" >> $GITHUB_OUTPUT
+          mkdir -p dist
+          # Copy release APK if signed
+          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk dist/volleyball-scoreboard.apk
+          elif [ -f android/app/build/outputs/apk/debug/app-debug.apk ]; then
+            cp android/app/build/outputs/apk/debug/app-debug.apk dist/volleyball-scoreboard.apk
+          fi
+          
+          # Also copy debug APK for direct install compatibility
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/app-debug.apk || true
 
-      - name: Upload APK Artifact
+          # List output APKs
+          ls -la dist/
+
+      - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: volleyball-scoreboard-apk
-          path: ${{ steps.apk-path.outputs.path }}
+          path: dist/*
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -54,11 +64,13 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: "Beach Volleyball Scoreboard (v1.0.${{ github.run_number }})"
           body: |
-            ### 🏐 Beach Volleyball Scoreboard Update (v1.0.${{ github.run_number }})
+            ### 🏐 Beach Volleyball Scoreboard (v1.0.${{ github.run_number }})
             
-            - **Serving Indicator**: High-visibility volleyball serve badge (tap badge to toggle server).
-            - **Seamless In-Place Updates**: Signed with a permanent keystore so future updates install directly over this app!
+            - **Serve Indicator**: High-visibility volleyball serve badge (tap badge to toggle server).
             - **Deterministic Scoring**: Single click = +1, Double click (<380ms) = -1 (undo).
-          files: ${{ steps.apk-path.outputs.path }}
+            - **Signed APK**: Download `volleyball-scoreboard.apk` or `app-debug.apk`.
+          files: |
+            dist/volleyball-scoreboard.apk
+            dist/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

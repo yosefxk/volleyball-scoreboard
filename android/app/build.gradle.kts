@@ -25,6 +25,8 @@ android {
             storePassword = "volleyball123"
             keyAlias = "scoreboard"
             keyPassword = "volleyball123"
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 
