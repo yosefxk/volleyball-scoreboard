@@ -25,37 +25,27 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Build Signed APKs
+      - name: Build Signed APK
         env:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
           cd android
           chmod +x ./gradlew || true
           gradle wrapper
-          ./gradlew assembleDebug assembleRelease --stacktrace
+          ./gradlew assembleRelease --stacktrace
 
-      - name: Prepare and Verify APKs
+      - name: Prepare Single APK Output
         id: prep
         run: |
           mkdir -p dist
-          # Copy release APK if signed
-          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
-            cp android/app/build/outputs/apk/release/app-release.apk dist/volleyball-scoreboard.apk
-          elif [ -f android/app/build/outputs/apk/debug/app-debug.apk ]; then
-            cp android/app/build/outputs/apk/debug/app-debug.apk dist/volleyball-scoreboard.apk
-          fi
-          
-          # Also copy debug APK for direct install compatibility
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/app-debug.apk || true
-
-          # List output APKs
+          cp android/app/build/outputs/apk/release/app-release.apk dist/volleyball-scoreboard.apk
           ls -la dist/
 
-      - name: Upload APK Artifacts
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: volleyball-scoreboard-apk
-          path: dist/*
+          path: dist/volleyball-scoreboard.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -66,11 +56,9 @@ jobs:
           body: |
             ### 🏐 Beach Volleyball Scoreboard (v1.0.${{ github.run_number }})
             
+            - **100% Offline**: Zero internet required.
             - **Serve Indicator**: High-visibility volleyball serve badge (tap badge to toggle server).
             - **Deterministic Scoring**: Single click = +1, Double click (<380ms) = -1 (undo).
-            - **Signed APK**: Download `volleyball-scoreboard.apk` or `app-debug.apk`.
-          files: |
-            dist/volleyball-scoreboard.apk
-            dist/app-debug.apk
+          files: dist/volleyball-scoreboard.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
