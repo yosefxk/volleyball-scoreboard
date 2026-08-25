@@ -82,6 +82,16 @@
     <section id="panel-team1" 
              class="relative flex-1 h-full flex flex-col items-center justify-center border-r-4 border-neutral-900 cursor-pointer overflow-hidden group select-none transition-colors duration-150"
              onclick="handleScreenClick('team1')">
+      
+      <!-- Serve Indicator Badge (Team A) -->
+      <div id="serve-badge-team1" 
+           onclick="event.stopPropagation(); toggleServer('team2');" 
+           class="absolute top-3 left-4 z-30 px-3.5 py-1 rounded-full bg-neonYellow text-black font-sans font-black text-xs uppercase tracking-wider shadow-2xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+           title="Click to switch server">
+        <span class="text-sm">🏐</span>
+        <span>SERVE</span>
+      </div>
+
       <!-- Glow & Visual Flash Feedback Layer -->
       <div id="glow-team1" class="absolute inset-0 bg-yellow-500/5 pointer-events-none transition duration-150"></div>
       
@@ -95,6 +105,16 @@
     <section id="panel-team2" 
              class="relative flex-1 h-full flex flex-col items-center justify-center cursor-pointer overflow-hidden group select-none transition-colors duration-150"
              onclick="handleScreenClick('team2')">
+      
+      <!-- Serve Indicator Badge (Team B) -->
+      <div id="serve-badge-team2" 
+           onclick="event.stopPropagation(); toggleServer('team1');" 
+           class="hidden absolute top-3 right-4 z-30 px-3.5 py-1 rounded-full bg-neonCyan text-black font-sans font-black text-xs uppercase tracking-wider shadow-2xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+           title="Click to switch server">
+        <span class="text-sm">🏐</span>
+        <span>SERVE</span>
+      </div>
+
       <!-- Glow & Visual Flash Feedback Layer -->
       <div id="glow-team2" class="absolute inset-0 bg-cyan-500/5 pointer-events-none transition duration-150"></div>
 
@@ -112,9 +132,12 @@
        - Single Click: Exactly +1 (after 380ms)
        - Double Click (<380ms): Exactly -1 (Undo)
        - Cooldown / Debounce: Mathematically blocks cascading +/- glitches
+       - Server Indicator: Moves to whichever team scored +1, or tap to switch
        ========================================================================== */
 
-    const STORAGE_KEY = 'vb_scores_simple_v1';
+    const STORAGE_KEY = 'vb_scores_simple_v2';
+
+    let currentServer = 'team1'; // 'team1' | 'team2'
 
     // Independent scoring state machine for each team
     const teamState = {
@@ -138,6 +161,7 @@
           const parsed = JSON.parse(saved);
           teamState.team1.score = parsed.s1 || 0;
           teamState.team2.score = parsed.s2 || 0;
+          currentServer = parsed.srv || 'team1';
         }
       } catch (e) {}
     }
@@ -146,7 +170,8 @@
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
           s1: teamState.team1.score,
-          s2: teamState.team2.score
+          s2: teamState.team2.score,
+          srv: currentServer
         }));
       } catch (e) {}
     }
@@ -154,6 +179,21 @@
     function renderScores() {
       document.getElementById('score-team1').innerText = teamState.team1.score;
       document.getElementById('score-team2').innerText = teamState.team2.score;
+
+      const b1 = document.getElementById('serve-badge-team1');
+      const b2 = document.getElementById('serve-badge-team2');
+      if (b1 && b2) {
+        b1.classList.toggle('hidden', currentServer !== 'team1');
+        b2.classList.toggle('hidden', currentServer !== 'team2');
+      }
+    }
+
+    function toggleServer(newServer) {
+      currentServer = newServer;
+      saveScores();
+      renderScores();
+      showToast(`${newServer === 'team1' ? 'Team A' : 'Team B'} is serving`);
+      triggerHaptic(30);
     }
 
     /**
@@ -199,6 +239,7 @@
         state.timer = setTimeout(() => {
           // SINGLE CLICK CONFIRMED (+1)
           state.score += 1;
+          currentServer = team; // Serving team becomes who scored!
           saveScores();
           renderScores();
           triggerHaptic(40);
@@ -236,6 +277,8 @@
           registerScoreEvent('team2');
         } else if (code === 'KeyR') {
           promptReset();
+        } else if (code === 'KeyS') {
+          toggleServer(currentServer === 'team1' ? 'team2' : 'team1');
         }
       });
     }
@@ -286,6 +329,7 @@
 
         teamState.team1.score = 0;
         teamState.team2.score = 0;
+        currentServer = 'team1';
         saveScores();
         renderScores();
         showToast("Score reset to 0 - 0");

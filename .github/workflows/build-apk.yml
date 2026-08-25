@@ -25,33 +25,40 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Build APK with Gradle
+      - name: Build Signed APK with Gradle
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
         run: |
           cd android
           chmod +x ./gradlew || true
           gradle wrapper
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleRelease --stacktrace || ./gradlew assembleDebug --stacktrace
+
+      - name: Locate APK
+        id: apk-path
+        run: |
+          APK_FILE=$(find android/app/build/outputs/apk -name "*.apk" | head -n 1)
+          echo "Found APK: $APK_FILE"
+          echo "path=$APK_FILE" >> $GITHUB_OUTPUT
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: volleyball-scoreboard-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: volleyball-scoreboard-apk
+          path: ${{ steps.apk-path.outputs.path }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.0.0-${{ github.run_number }}
-          name: "Beach Volleyball Scoreboard APK (v1.0.0-${{ github.run_number }})"
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Beach Volleyball Scoreboard (v1.0.${{ github.run_number }})"
           body: |
-            ### 🏐 Beach Volleyball Scoreboard - Android APK
+            ### 🏐 Beach Volleyball Scoreboard Update (v1.0.${{ github.run_number }})
             
-            This native Android APK intercepts hardware buttons from Bluetooth clickers (like AB Shutter 3) without the Android volume slider appearing!
-            
-            #### 📱 Direct Download:
-            Download **`app-debug.apk`** below, tap to install on your Android device, and connect your remote.
-          files: |
-            android/app/build/outputs/apk/debug/app-debug.apk
+            - **Serving Indicator**: High-visibility volleyball serve badge (tap badge to toggle server).
+            - **Seamless In-Place Updates**: Signed with a permanent keystore so future updates install directly over this app!
+            - **Deterministic Scoring**: Single click = +1, Double click (<380ms) = -1 (undo).
+          files: ${{ steps.apk-path.outputs.path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

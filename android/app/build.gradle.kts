@@ -7,19 +7,34 @@ android {
     namespace = "com.volleyball.scoreboard"
     compileSdk = 34
 
+    val buildNumber = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 100
+
     defaultConfig {
         applicationId = "com.volleyball.scoreboard"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = buildNumber
+        versionName = "1.0.$buildNumber"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("scoreboard-signing-key.jks")
+            storePassword = "volleyball123"
+            keyAlias = "scoreboard"
+            keyPassword = "volleyball123"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
