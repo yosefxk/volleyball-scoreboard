@@ -1,17 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-full w-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Beach Volleyball Scoreboard</title>
   
-  <!-- PWA & Mobile Web App Meta Tags -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#000000">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Scoreboard">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,7 +16,7 @@
   <!-- Google Fonts: High-impact athletic typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,700;0,900;1,900&family=Oswald:wght@700&family=Teko:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700;900&family=Teko:wght@700&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
@@ -27,34 +24,20 @@
         extend: {
           fontFamily: {
             score: ['"Teko"', '"Chakra Petch"', 'Impact', 'sans-serif'],
-            display: ['"Chakra Petch"', '"Oswald"', 'sans-serif'],
           },
           colors: {
             neonYellow: '#FAFF00',
             neonCyan: '#00F0FF',
-            neonOrange: '#FF5500',
-            neonMagenta: '#FF0055',
-            neonGreen: '#00FF66',
           },
           keyframes: {
-            bannerPulse: {
-              '0%, 100%': { transform: 'scale(1)', filter: 'brightness(1)' },
-              '50%': { transform: 'scale(1.02)', filter: 'brightness(1.2)' },
-            },
             scorePop: {
               '0%': { transform: 'scale(0.92)' },
               '50%': { transform: 'scale(1.05)' },
               '100%': { transform: 'scale(1)' },
             },
-            flashRed: {
-              '0%, 100%': { backgroundColor: 'transparent' },
-              '50%': { backgroundColor: 'rgba(239, 68, 68, 0.4)' },
-            }
           },
           animation: {
-            bannerPulse: 'bannerPulse 1.2s infinite ease-in-out',
             scorePop: 'scorePop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-            flashRed: 'flashRed 0.4s ease-out',
           }
         }
       }
@@ -68,1055 +51,263 @@
       -webkit-user-select: none;
     }
     
-    /* Standard score size */
-    .standard-score {
-      font-size: min(32vw, 36vh);
-      line-height: 0.85;
-      font-feature-settings: "tnum";
-      font-variant-numeric: tabular-nums;
-      text-shadow: 0 4px 20px rgba(0,0,0,0.8);
-    }
-    
-    @media (orientation: landscape) {
-      .standard-score {
-        font-size: min(24vw, 55vh);
-      }
-    }
-
-    /* GIANT SCOREBOARD MODE (Maximal possible screen fill in landscape) */
+    /* GIGANTIC SCORE TYPOGRAPHY (Maximal screen fill) */
     .giant-score {
-      font-size: min(46vw, 92vh) !important;
-      line-height: 0.82 !important;
+      font-size: min(45vw, 90vh);
+      line-height: 0.82;
       font-feature-settings: "tnum";
       font-variant-numeric: tabular-nums;
-      text-shadow: 0 6px 30px rgba(0,0,0,0.95);
-    }
-
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+      text-shadow: 0 8px 32px rgba(0, 0, 0, 0.95);
     }
   </style>
 </head>
-<body class="h-full w-full bg-black text-white font-display overflow-hidden flex flex-col justify-between select-none">
+<body class="h-full w-full bg-black text-white font-score overflow-hidden flex flex-col justify-between select-none">
 
-  <!-- TOP APP BAR (Hidden in Giant Fullscreen Mode) -->
-  <header id="app-header" class="w-full bg-neutral-950/90 border-b-2 border-neutral-800 z-30 px-3 py-2 flex items-center justify-between gap-2 transition-all duration-200">
-    <!-- Left: Match Info & Set Counter -->
-    <div class="flex items-center gap-2">
-      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-400/20 text-yellow-300 border border-yellow-400/40 rounded font-black text-xs uppercase tracking-wider">
-        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/></svg>
-        <span id="set-indicator-text">SET 1</span>
-      </span>
-      <div id="set-history-container" class="hidden sm:flex items-center gap-1.5 text-xs text-neutral-400 font-mono">
-      </div>
-    </div>
-
-    <!-- Center: Total Points / Next Switch Tracker -->
-    <div class="flex items-center gap-2 text-xs uppercase tracking-widest font-black text-neutral-300">
-      <span class="hidden md:inline text-neutral-400">Total:</span>
-      <span id="total-points-badge" class="px-2 py-0.5 bg-neutral-800 rounded text-white font-mono text-sm">0</span>
-      <span class="hidden sm:inline text-neutral-500 text-[10px]">(Switch at 7s)</span>
-    </div>
-
-    <!-- Right: Quick Controls -->
-    <div class="flex items-center gap-1.5">
-      <!-- GIANT HORIZONTAL SCOREBOARD BUTTON -->
-      <button onclick="toggleGiantScoreMode()" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-black flex items-center gap-1.5 text-xs font-black uppercase tracking-wider shadow-lg transition active:scale-95 border border-yellow-300" title="Switch to Giant Horizontal Numbers Mode">
-        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
-          <path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm0 2v8h16V8H4zm6 2h4v4h-4v-4z"/>
-        </svg>
-        <span>Giant Mode</span>
-      </button>
-
-      <!-- Remote Status / Help Button -->
-      <button onclick="openKeymapModal()" class="px-2.5 py-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-cyan-300 flex items-center gap-1 text-xs font-bold transition active:scale-95" title="Remote Info">
-        <span class="w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e] inline-block"></span>
-        <span class="hidden md:inline">Remote</span>
-      </button>
-
-      <!-- Web Speech Announcer Toggle -->
-      <button id="btn-voice" onclick="toggleSpeech()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 transition active:scale-95" title="Toggle Voice Score Announcer">
-        <svg id="voice-icon-on" class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"/>
-        </svg>
-        <svg id="voice-icon-off" class="w-5 h-5 text-red-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
-        </svg>
-      </button>
-
-      <!-- Swap Sides Button -->
-      <button onclick="swapSides()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-yellow-400 transition active:scale-95" title="Swap Court Sides (Layout)">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-        </svg>
-      </button>
-
-      <!-- Settings / Menu -->
-      <button onclick="openSettingsModal()" class="p-1.5 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-300 transition active:scale-95" title="Match Settings">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-      </button>
-    </div>
+  <!-- FLOATING RESET BUTTON (Top Center) -->
+  <header class="fixed top-2 left-1/2 -translate-x-1/2 z-40">
+    <button onclick="promptReset()" class="px-4 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 shadow-2xl backdrop-blur-sm text-xs font-black font-sans uppercase tracking-widest transition active:scale-95">
+      Reset Game
+    </button>
   </header>
 
-  <!-- FLOATING EXIT BUTTON FOR GIANT SCOREBOARD MODE -->
-  <button id="btn-exit-giant" onclick="toggleGiantScoreMode()" class="hidden fixed top-3 right-3 z-50 px-3 py-1.5 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-white/90 border border-neutral-700/80 shadow-2xl backdrop-blur-sm text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95">
-    <span>✕</span>
-    <span>Exit Giant Mode</span>
-  </button>
-
-  <!-- SWITCH SIDES BANNER ALERT -->
-  <div id="switch-banner" class="hidden fixed top-4 left-0 right-0 z-40 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-black px-4 py-3 shadow-2xl border-y-4 border-black animate-bannerPulse">
-    <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <span class="text-3xl">🔄</span>
-        <div>
-          <h2 class="text-xl sm:text-2xl font-black uppercase tracking-wider leading-none">SWITCH COURT SIDES!</h2>
-          <p id="switch-banner-sub" class="text-xs sm:text-sm font-bold opacity-90">Total points reach multiple of 7</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="swapSides(); dismissSwitchBanner();" class="px-3 py-1.5 bg-black text-yellow-300 font-black text-xs uppercase rounded-lg border-2 border-black hover:bg-neutral-900 shadow-md transition active:scale-95">
-          Swap Display
-        </button>
-        <button onclick="dismissSwitchBanner()" class="p-1 text-black hover:bg-black/10 rounded-full text-xl font-black">
-          ✕
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-300 bg-neutral-900/95 border-2 border-yellow-400 text-yellow-300 px-4 py-2 rounded-xl text-sm font-bold shadow-2xl tracking-wide flex items-center gap-2">
-    <span id="toast-icon">ℹ️</span>
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200 bg-neutral-900/95 border border-yellow-400 text-yellow-300 px-4 py-1.5 rounded-full text-xs font-sans font-bold shadow-2xl tracking-wide">
     <span id="toast-msg">Score updated</span>
   </div>
 
-  <!-- LIVE EVENT DEBUG STATUS BAR (Hidden in Giant Mode) -->
-  <div id="debug-status-bar" class="w-full bg-neutral-950 border-b border-neutral-800 px-3 py-1 text-[11px] font-mono text-neutral-400 flex items-center justify-between">
-    <div class="flex items-center gap-2 truncate">
-      <span id="debug-indicator" class="w-2 h-2 rounded-full bg-green-400 inline-block shadow-[0_0_6px_#22c55e]"></span>
-      <span id="live-debug-text">Remote Ready: Button 1 (Team A) | Button 2 (Team B)</span>
-    </div>
-  </div>
+  <!-- MAIN SCOREBOARD ARENA (Left Half Team A, Right Half Team B) -->
+  <main class="h-full w-full flex flex-row overflow-hidden relative">
 
-  <!-- MAIN SCOREBOARD ARENA -->
-  <main id="scoreboard-container" class="flex-1 w-full h-full flex flex-col md:flex-row overflow-hidden relative">
-
-    <!-- TEAM 1 (Left Half in landscape) -->
-    <section id="panel-team1" class="relative flex-1 flex flex-col justify-between items-center p-3 sm:p-5 border-b-4 md:border-b-0 md:border-r-4 border-black transition-colors duration-200 cursor-pointer overflow-hidden group select-none"
-             onclick="handleTeamClick('team1', event)">
-      <div id="glow-team1" class="absolute inset-0 bg-yellow-500/10 pointer-events-none transition duration-150"></div>
+    <!-- TEAM A (LEFT HALF - NEON YELLOW) -->
+    <section id="panel-team1" 
+             class="relative flex-1 h-full flex flex-col items-center justify-center border-r-4 border-neutral-900 cursor-pointer overflow-hidden group select-none transition-colors duration-150"
+             onclick="handleScreenClick('team1')">
+      <!-- Glow & Visual Flash Feedback Layer -->
+      <div id="glow-team1" class="absolute inset-0 bg-yellow-500/5 pointer-events-none transition duration-150"></div>
       
-      <!-- Top Bar: Name & Serve Badge & Sets Won (Hidden in Giant Mode) -->
-      <div class="standard-ui-element w-full flex items-center justify-between z-10">
-        <div class="flex items-center gap-2">
-          <button id="serve-team1" onclick="setServer('team1', event)" class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-yellow-400 text-black border-yellow-300" title="Click to designate server">
-            <span class="text-sm">🏐</span>
-            <span class="hidden sm:inline">SERVE</span>
-          </button>
-          <span id="name-team1" onclick="editTeamName('team1', event)" class="text-lg sm:text-2xl font-black tracking-wider uppercase text-yellow-300 hover:text-white transition underline decoration-dotted decoration-yellow-500/50 underline-offset-4" title="Click to rename">
-            TEAM A
-          </span>
-        </div>
-        <div class="flex items-center gap-1.5 bg-neutral-900/80 px-2.5 py-1 rounded-lg border border-neutral-700">
-          <span class="text-[10px] text-neutral-400 uppercase font-bold">Sets:</span>
-          <span id="sets-team1" class="text-lg font-black text-yellow-400 font-mono leading-none">0</span>
-        </div>
-      </div>
-
-      <!-- Giant Mode Serving Dot Indicator (Visible only in Giant Mode when serving) -->
-      <div id="giant-serve-dot-team1" class="hidden absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 bg-yellow-400 text-black rounded-full font-black text-xs uppercase shadow-2xl">
-        <span>🏐</span> <span>SERVE</span>
-      </div>
-
-      <!-- Center: Massive Score Display -->
-      <div class="flex-1 flex flex-col items-center justify-center my-auto z-10 w-full">
-        <div id="score-team1" class="standard-score font-score font-black text-yellow-400 text-center tracking-tighter filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
-          0
-        </div>
-        <div class="standard-ui-element text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
-          Button 1 / Tap = +1 &nbsp;|&nbsp; Double Click = -1
-        </div>
-      </div>
-
-      <!-- Bottom: Manual Controls (Hidden in Giant Mode) -->
-      <div class="standard-ui-element w-full flex items-center justify-between z-10 pt-1" onclick="event.stopPropagation()">
-        <button onclick="decrementScore('team1', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-neutral-900/90 border-2 border-red-500/60 hover:border-red-500 text-red-400 text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition active:bg-red-500 active:text-white" title="Undo / Subtract 1 point">
-          −
-        </button>
-
-        <div class="px-2.5 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span class="text-yellow-400 font-bold">Button 1</span>
-        </div>
-
-        <button onclick="incrementScore('team1', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-yellow-400 hover:bg-yellow-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-yellow-300" title="Add 1 point">
-          +
-        </button>
+      <!-- Massive Score Display -->
+      <div id="score-team1" class="giant-score font-bold text-neonYellow text-center tracking-tighter filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.9)]">
+        0
       </div>
     </section>
 
-    <!-- TEAM 2 (Right Half in landscape) -->
-    <section id="panel-team2" class="relative flex-1 flex flex-col justify-between items-center p-3 sm:p-5 transition-colors duration-200 cursor-pointer overflow-hidden group select-none"
-             onclick="handleTeamClick('team2', event)">
-      <div id="glow-team2" class="absolute inset-0 bg-cyan-500/10 pointer-events-none transition duration-150"></div>
+    <!-- TEAM B (RIGHT HALF - NEON CYAN) -->
+    <section id="panel-team2" 
+             class="relative flex-1 h-full flex flex-col items-center justify-center cursor-pointer overflow-hidden group select-none transition-colors duration-150"
+             onclick="handleScreenClick('team2')">
+      <!-- Glow & Visual Flash Feedback Layer -->
+      <div id="glow-team2" class="absolute inset-0 bg-cyan-500/5 pointer-events-none transition duration-150"></div>
 
-      <!-- Top Bar: Name & Serve Badge & Sets Won (Hidden in Giant Mode) -->
-      <div class="standard-ui-element w-full flex items-center justify-between z-10">
-        <div class="flex items-center gap-2">
-          <button id="serve-team2" onclick="setServer('team2', event)" class="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-400 border-neutral-700 hover:border-neutral-500" title="Click to designate server">
-            <span class="text-sm">🏐</span>
-            <span class="hidden sm:inline">SERVE</span>
-          </button>
-          <span id="name-team2" onclick="editTeamName('team2', event)" class="text-lg sm:text-2xl font-black tracking-wider uppercase text-cyan-400 hover:text-white transition underline decoration-dotted decoration-cyan-500/50 underline-offset-4" title="Click to rename">
-            TEAM B
-          </span>
-        </div>
-        <div class="flex items-center gap-1.5 bg-neutral-900/80 px-2.5 py-1 rounded-lg border border-neutral-700">
-          <span class="text-[10px] text-neutral-400 uppercase font-bold">Sets:</span>
-          <span id="sets-team2" class="text-lg font-black text-cyan-400 font-mono leading-none">0</span>
-        </div>
-      </div>
-
-      <!-- Giant Mode Serving Dot Indicator (Visible only in Giant Mode when serving) -->
-      <div id="giant-serve-dot-team2" class="hidden absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1 bg-cyan-400 text-black rounded-full font-black text-xs uppercase shadow-2xl">
-        <span>🏐</span> <span>SERVE</span>
-      </div>
-
-      <!-- Center: Massive Score Display -->
-      <div class="flex-1 flex flex-col items-center justify-center my-auto z-10 w-full">
-        <div id="score-team2" class="standard-score font-score font-black text-cyan-400 text-center tracking-tighter filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.9)]">
-          0
-        </div>
-        <div class="standard-ui-element text-[11px] sm:text-xs uppercase tracking-widest text-neutral-400 font-black opacity-80 mt-[-10px]">
-          Button 2 / Tap = +1 &nbsp;|&nbsp; Double Click = -1
-        </div>
-      </div>
-
-      <!-- Bottom: Manual Controls (Hidden in Giant Mode) -->
-      <div class="standard-ui-element w-full flex items-center justify-between z-10 pt-1" onclick="event.stopPropagation()">
-        <button onclick="decrementScore('team2', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-neutral-900/90 border-2 border-red-500/60 hover:border-red-500 text-red-400 text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition active:bg-red-500 active:text-white" title="Undo / Subtract 1 point">
-          −
-        </button>
-
-        <div class="px-2.5 py-1 bg-black/60 rounded border border-neutral-800 text-[10px] text-neutral-400 font-mono text-center">
-          <span class="text-cyan-400 font-bold">Button 2</span>
-        </div>
-
-        <button onclick="incrementScore('team2', event)" class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-black text-2xl font-black flex items-center justify-center shadow-lg active:scale-90 transition border-2 border-cyan-300" title="Add 1 point">
-          +
-        </button>
+      <!-- Massive Score Display -->
+      <div id="score-team2" class="giant-score font-bold text-neonCyan text-center tracking-tighter filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.9)]">
+        0
       </div>
     </section>
 
   </main>
 
-  <!-- BOTTOM STATUS & QUICK ACTION BAR (Hidden in Giant Mode) -->
-  <footer id="app-footer" class="w-full bg-neutral-950 border-t-2 border-neutral-800 z-30 px-3 py-1.5 flex items-center justify-between text-xs text-neutral-400 transition-all duration-200">
-    <div class="flex items-center gap-2">
-      <button onclick="endSet()" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-white rounded font-bold border border-neutral-600 transition active:scale-95 flex items-center gap-1">
-        <span>🏆</span>
-        <span>Finish Set</span>
-      </button>
-      <button onclick="undoGlobal()" class="px-2.5 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded font-bold border border-neutral-700 transition active:scale-95 flex items-center gap-1" title="Undo last scoring action">
-        <span>↩</span>
-        <span class="hidden sm:inline">Undo</span>
-      </button>
-    </div>
-
-    <div id="match-status-badge" class="font-black tracking-wider uppercase text-yellow-400 text-xs px-2 py-0.5 rounded bg-yellow-400/10 border border-yellow-400/30 hidden">
-      SET POINT
-    </div>
-
-    <div class="flex items-center gap-2">
-      <button onclick="promptResetMatch()" class="px-2.5 py-1 bg-red-950/60 hover:bg-red-900 text-red-300 rounded font-bold border border-red-800 transition active:scale-95">
-        Reset Match
-      </button>
-    </div>
-  </footer>
-
-  <!-- ==================== MODALS ==================== -->
-
-  <!-- 1. BLUETOOTH REMOTE INFO MODAL -->
-  <div id="modal-keymap" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-neutral-900 border-2 border-cyan-400/80 rounded-2xl w-full max-w-lg p-5 sm:p-6 shadow-2xl text-white my-auto max-h-[90vh] overflow-y-auto no-scrollbar">
-      <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
-        <div class="flex items-center gap-2">
-          <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-          </svg>
-          <h3 class="text-xl font-black uppercase tracking-wider text-cyan-400">Bluetooth Remote Setup</h3>
-        </div>
-        <button onclick="closeKeymapModal()" class="text-neutral-400 hover:text-white text-2xl font-black">✕</button>
-      </div>
-
-      <div class="p-3.5 bg-gradient-to-r from-green-950/80 to-cyan-950/80 rounded-xl border border-green-500/50 mb-4">
-        <div class="text-xs font-black uppercase text-green-300 flex items-center gap-1.5 mb-1">
-          <span class="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_#22c55e]"></span>
-          Hardware Remote Connected
-        </div>
-        <p class="text-[11px] text-neutral-300 leading-relaxed">
-          The app captures button clicks from your paired AB Shutter remote with 0ms lag:
-        </p>
-        <div class="mt-2 text-xs font-mono font-bold text-yellow-300 space-y-1">
-          <div>• <strong>Button 1 (iOS / Big Button)</strong> → +1 for Team A</div>
-          <div>• <strong>Button 2 (Android / Small Button)</strong> → +1 for Team B</div>
-          <div>• <strong>Rapid Double Click (&lt;400ms)</strong> → −1 (Undo)</div>
-        </div>
-      </div>
-
-      <div class="pt-2 border-t border-neutral-800 flex justify-end">
-        <button onclick="closeKeymapModal()" class="px-5 py-2 bg-neutral-700 hover:bg-neutral-600 text-white font-black text-xs uppercase rounded-xl transition">
-          Got It
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 2. MATCH & DISPLAY SETTINGS MODAL -->
-  <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-neutral-900 border-2 border-neutral-700 rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-2xl text-white">
-      <div class="flex items-center justify-between border-b border-neutral-800 pb-3 mb-4">
-        <h3 class="text-xl font-black uppercase tracking-wider text-white">Match Settings</h3>
-        <button onclick="closeSettingsModal()" class="text-neutral-400 hover:text-white text-2xl font-black">✕</button>
-      </div>
-
-      <div class="space-y-4 mb-6">
-        <div>
-          <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">Points to Win Set</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button onclick="setTargetPoints(21)" id="target-btn-21" class="py-2 rounded-lg font-black text-sm bg-yellow-400 text-black border-2 border-yellow-400">21 (Standard)</button>
-            <button onclick="setTargetPoints(15)" id="target-btn-15" class="py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700">15 (Tiebreak)</button>
-            <button onclick="setTargetPoints(25)" id="target-btn-25" class="py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700">25 (Indoor)</button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">Court Side Switch Interval</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button onclick="setSwitchInterval(7)" id="switch-btn-7" class="py-2 rounded-lg font-black text-sm bg-yellow-400 text-black border-2 border-yellow-400">Every 7 pts</button>
-            <button onclick="setSwitchInterval(5)" id="switch-btn-5" class="py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700">Every 5 pts</button>
-            <button onclick="setSwitchInterval(0)" id="switch-btn-0" class="py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700">Disabled</button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">High-Contrast Color Theme</label>
-          <select id="select-theme" onchange="changeTheme(this.value)" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg p-2.5 text-sm font-bold text-white focus:outline-none focus:border-yellow-400">
-            <option value="neon">Neon High-Vis (Black / Yellow / Cyan)</option>
-            <option value="solar">Solar High-Noon (White Background / Bold)</option>
-            <option value="monochrome">Monochrome High-Contrast</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs uppercase font-bold text-neutral-300 mb-1.5">Voice Speech Style</label>
-          <div class="flex items-center gap-2">
-            <input type="checkbox" id="check-voice-announcements" onchange="toggleSpeechFromSettings(this.checked)" class="w-4 h-4 rounded text-yellow-400 focus:ring-0">
-            <label for="check-voice-announcements" class="text-xs text-neutral-300 font-bold">Announce score via speech synthesis</label>
-          </div>
-        </div>
-      </div>
-
-      <div class="pt-2 border-t border-neutral-800 flex justify-end">
-        <button onclick="closeSettingsModal()" class="px-5 py-2 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase rounded-xl transition">
-          Apply & Close
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- JAVASCRIPT APPLICATION LOGIC -->
   <script>
     /* ==========================================================================
-       BEACH VOLLEYBALL SCOREBOARD - CORE STATE & ENGINE
+       DETERMINISTIC SINGLE / DOUBLE CLICK SCORING ENGINE
+       - Single Click: Exactly +1 (after 380ms)
+       - Double Click (<380ms): Exactly -1 (Undo)
+       - Cooldown / Debounce: Mathematically blocks cascading +/- glitches
        ========================================================================== */
 
-    const STATE_KEY = 'vb_scoreboard_state_v7';
+    const STORAGE_KEY = 'vb_scores_simple_v1';
 
-    let state = {
-      team1: { name: 'TEAM A', score: 0, sets: 0 },
-      team2: { name: 'TEAM B', score: 0, sets: 0 },
-      server: 'team1',
-      currentSet: 1,
-      targetPoints: 21,
-      switchInterval: 7,
-      isSwapped: false,
-      voiceEnabled: true,
-      theme: 'neon',
-      setHistory: [],
-      isGiantMode: false,
+    // Independent scoring state machine for each team
+    const teamState = {
+      team1: { score: 0, timer: null, status: 'IDLE' }, // 'IDLE' | 'WAITING' | 'COOLDOWN'
+      team2: { score: 0, timer: null, status: 'IDLE' }
     };
 
-    const clickTimers = { team1: null, team2: null };
-    const lastClickTimes = { team1: 0, team2: 0 };
-    const DOUBLE_CLICK_WINDOW_MS = 400;
-    const historyStack = [];
+    const DOUBLE_CLICK_WINDOW_MS = 380;
+    const COOLDOWN_LOCKOUT_MS = 350;
 
-    function initApp() {
-      loadSavedState();
-      renderUI();
-      setupKeyListeners();
+    function init() {
+      loadSavedScores();
+      renderScores();
+      setupKeyboardListeners();
     }
 
-    function saveState() {
+    function loadSavedScores() {
       try {
-        localStorage.setItem(STATE_KEY, JSON.stringify(state));
-      } catch (e) {
-        console.warn('Storage save failed:', e);
-      }
-    }
-
-    function loadSavedState() {
-      try {
-        const saved = localStorage.getItem(STATE_KEY);
+        const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
-          state = { ...state, ...JSON.parse(saved) };
+          const parsed = JSON.parse(saved);
+          teamState.team1.score = parsed.s1 || 0;
+          teamState.team2.score = parsed.s2 || 0;
         }
-      } catch (e) {
-        console.warn('Storage load failed:', e);
-      }
+      } catch (e) {}
     }
 
-    /* ==========================================================================
-       GIANT HORIZONTAL SCOREBOARD MODE (MAXIMAL NUMBERS ONLY)
-       ========================================================================== */
-
-    function toggleGiantScoreMode() {
-      state.isGiantMode = !state.isGiantMode;
-      applyGiantModeUI();
-      saveState();
-
-      if (state.isGiantMode) {
-        // Lock to Landscape
-        if (window.AndroidNative && window.AndroidNative.setOrientation) {
-          window.AndroidNative.setOrientation("landscape");
-        } else if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(() => {});
-        }
-        showToast("Giant Match Mode: Numbers Maximized");
-      } else {
-        // Unlock Orientation
-        if (window.AndroidNative && window.AndroidNative.setOrientation) {
-          window.AndroidNative.setOrientation("unspecified");
-        } else if (screen.orientation && screen.orientation.unlock) {
-          screen.orientation.unlock();
-        }
-        showToast("Standard Mode Restored");
-      }
+    function saveScores() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          s1: teamState.team1.score,
+          s2: teamState.team2.score
+        }));
+      } catch (e) {}
     }
 
-    function applyGiantModeUI() {
-      const header = document.getElementById('app-header');
-      const footer = document.getElementById('app-footer');
-      const debugBar = document.getElementById('debug-status-bar');
-      const exitBtn = document.getElementById('btn-exit-giant');
-      const score1 = document.getElementById('score-team1');
-      const score2 = document.getElementById('score-team2');
-      const container = document.getElementById('scoreboard-container');
-      const standardElements = document.querySelectorAll('.standard-ui-element');
-
-      const dot1 = document.getElementById('giant-serve-dot-team1');
-      const dot2 = document.getElementById('giant-serve-dot-team2');
-
-      if (state.isGiantMode) {
-        if (header) header.classList.add('hidden');
-        if (footer) footer.classList.add('hidden');
-        if (debugBar) debugBar.classList.add('hidden');
-        if (exitBtn) exitBtn.classList.remove('hidden');
-
-        standardElements.forEach(el => el.classList.add('hidden'));
-
-        // Force Horizontal Row
-        if (container) {
-          container.classList.remove('flex-col');
-          container.classList.add('flex-row');
-        }
-
-        // Apply Giant Typography
-        if (score1) {
-          score1.classList.remove('standard-score');
-          score1.classList.add('giant-score');
-        }
-        if (score2) {
-          score2.classList.remove('standard-score');
-          score2.classList.add('giant-score');
-        }
-
-        // Serving indicators in giant mode
-        if (dot1 && dot2) {
-          dot1.classList.toggle('hidden', state.server !== 'team1');
-          dot2.classList.toggle('hidden', state.server !== 'team2');
-        }
-      } else {
-        if (header) header.classList.remove('hidden');
-        if (footer) footer.classList.remove('hidden');
-        if (debugBar) debugBar.classList.remove('hidden');
-        if (exitBtn) exitBtn.classList.add('hidden');
-
-        standardElements.forEach(el => el.classList.remove('hidden'));
-
-        if (score1) {
-          score1.classList.remove('giant-score');
-          score1.classList.add('standard-score');
-        }
-        if (score2) {
-          score2.classList.remove('giant-score');
-          score2.classList.add('standard-score');
-        }
-
-        if (dot1) dot1.classList.add('hidden');
-        if (dot2) dot2.classList.add('hidden');
-
-        applyLayoutSwap();
-      }
+    function renderScores() {
+      document.getElementById('score-team1').innerText = teamState.team1.score;
+      document.getElementById('score-team2').innerText = teamState.team2.score;
     }
 
-    /* ==========================================================================
-       NATIVE ANDROID BRIDGE (TRIGGERED BY MAINACTIVITY DISPATCHKEYEVENT)
-       ========================================================================== */
+    /**
+     * Core Scoring Event Handler:
+     * Guarantees that each user interaction can ONLY EVER produce:
+     * - Exactly +1 (single press)
+     * - Exactly -1 (rapid double press)
+     */
+    function registerScoreEvent(team) {
+      const state = teamState[team];
 
-    window.handleNativeRemoteClick = function(team, source) {
-      logRemoteDiagnostic(`⚡ Click: [${source}] → ${state[team].name}`);
-      triggerTeamScoring(team);
-    };
+      // 1. If currently in cooldown lock, completely ignore key bounce or trailing clicks
+      if (state.status === 'COOLDOWN') {
+        return;
+      }
 
-    window.setNativeAndroidMode = function(isActive) {
-      logRemoteDiagnostic("✓ Native Android Remote Ready: Click shutter buttons to score");
-    };
+      // 2. If a single click is already pending, this is a DOUBLE CLICK (-1 UNDO)
+      if (state.status === 'WAITING') {
+        // Cancel the pending +1 timer
+        clearTimeout(state.timer);
+        state.timer = null;
 
-    /* ==========================================================================
-       SCORING LOGIC: SINGLE CLICK (+1) & RAPID DOUBLE CLICK (-1 UNDO)
-       ========================================================================== */
+        // Perform EXACTLY ONE decrement (-1)
+        state.score = Math.max(0, state.score - 1);
+        saveScores();
+        renderScores();
+        triggerVisualFeedback(team, 'red');
+        triggerHaptic(80);
 
-    function triggerTeamScoring(team) {
-      const now = performance.now();
-      const timeSinceLast = now - lastClickTimes[team];
+        // Enter cooldown lockout to prevent any trailing 3rd/4th clicks from triggering +1
+        state.status = 'COOLDOWN';
+        setTimeout(() => {
+          state.status = 'IDLE';
+        }, COOLDOWN_LOCKOUT_MS);
+        return;
+      }
 
-      if (timeSinceLast < DOUBLE_CLICK_WINDOW_MS && clickTimers[team] !== null) {
-        clearTimeout(clickTimers[team]);
-        clickTimers[team] = null;
-        lastClickTimes[team] = 0;
+      // 3. FIRST CLICK (Start waiting for possible double click)
+      if (state.status === 'IDLE') {
+        state.status = 'WAITING';
+        triggerVisualFeedback(team, 'pop');
 
-        modifyScore(team, -1, 'double-click');
-        showToast(`Undo: -1 for ${state[team].name}`);
-        flashCardFeedback(team, 'red');
-      } else {
-        lastClickTimes[team] = now;
-        flashCardFeedback(team, 'pop');
+        state.timer = setTimeout(() => {
+          // SINGLE CLICK CONFIRMED (+1)
+          state.score += 1;
+          saveScores();
+          renderScores();
+          triggerHaptic(40);
 
-        clickTimers[team] = setTimeout(() => {
-          modifyScore(team, 1, 'single-click');
-          clickTimers[team] = null;
+          state.timer = null;
+          state.status = 'COOLDOWN';
+          setTimeout(() => {
+            state.status = 'IDLE';
+          }, 80);
         }, DOUBLE_CLICK_WINDOW_MS);
       }
     }
 
-    function handleTeamClick(team, event) {
-      if (event) event.stopPropagation();
-      triggerTeamScoring(team);
+    /* Screen Tap Handler */
+    function handleScreenClick(team) {
+      registerScoreEvent(team);
     }
 
-    function incrementScore(team, event) {
-      if (event) event.stopPropagation();
-      modifyScore(team, 1, 'manual-add');
-      flashCardFeedback(team, 'pop');
-    }
+    /* Native Android Remote Key Handler (called from MainActivity) */
+    window.handleRemoteClick = function(team) {
+      registerScoreEvent(team);
+    };
 
-    function decrementScore(team, event) {
-      if (event) event.stopPropagation();
-      modifyScore(team, -1, 'manual-sub');
-      flashCardFeedback(team, 'red');
-    }
-
-    function modifyScore(team, delta, reason = '') {
-      const prevScore = state[team].score;
-      const newScore = Math.max(0, prevScore + delta);
-
-      if (prevScore === newScore && delta < 0) {
-        showToast(`Score is already 0`);
-        return;
-      }
-
-      historyStack.push(JSON.stringify(state));
-      if (historyStack.length > 30) historyStack.shift();
-
-      state[team].score = newScore;
-
-      if (delta > 0) {
-        state.server = team;
-      }
-
-      if (window.AndroidNative && window.AndroidNative.vibrate) {
-        window.AndroidNative.vibrate(delta > 0 ? 40 : 80);
-      } else if ('vibrate' in navigator) {
-        navigator.vibrate(delta > 0 ? 40 : [30, 40, 30]);
-      }
-
-      saveState();
-      renderUI();
-      announceScore();
-      checkSideSwitchBanner();
-    }
-
-    function undoGlobal() {
-      if (historyStack.length === 0) {
-        showToast("Nothing to undo");
-        return;
-      }
-      const previousState = JSON.parse(historyStack.pop());
-      state = previousState;
-      saveState();
-      renderUI();
-      showToast("Undone last action");
-      announceScore();
-    }
-
-    /* ==========================================================================
-       TEXT-TO-SPEECH ANNOUNCER
-       ========================================================================== */
-
-    function announceScore() {
-      if (!state.voiceEnabled) return;
-
-      const serverTeam = state.server;
-      const receiverTeam = serverTeam === 'team1' ? 'team2' : 'team1';
-
-      const serverScore = state[serverTeam].score;
-      const receiverScore = state[receiverTeam].score;
-      const totalPoints = state.team1.score + state.team2.score;
-
-      let announcement = "";
-      const isSwitchPoint = state.switchInterval > 0 && totalPoints > 0 && (totalPoints % state.switchInterval === 0);
-
-      if (serverScore === receiverScore) {
-        announcement = `${serverScore} all.`;
-      } else {
-        announcement = `${serverScore} serving ${receiverScore}.`;
-      }
-
-      if (isSwitchPoint) {
-        announcement = `Switch sides! ${announcement}`;
-      } else if (isSetPoint()) {
-        announcement = `Set point. ${announcement}`;
-      }
-
-      if (window.AndroidNative && window.AndroidNative.speak) {
-        window.AndroidNative.speak(announcement);
-        return;
-      }
-
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(announcement);
-        utterance.rate = 1.05;
-        utterance.pitch = 1.0;
-        utterance.lang = 'en-US';
-        try {
-          window.speechSynthesis.speak(utterance);
-        } catch (err) {
-          console.warn('Speech error:', err);
-        }
-      }
-    }
-
-    function toggleSpeech() {
-      state.voiceEnabled = !state.voiceEnabled;
-      saveState();
-      renderUI();
-      showToast(state.voiceEnabled ? "Voice Announcer: ON" : "Voice Announcer: OFF");
-      if (state.voiceEnabled) {
-        announceScore();
-      }
-    }
-
-    function toggleSpeechFromSettings(enabled) {
-      state.voiceEnabled = enabled;
-      saveState();
-      renderUI();
-    }
-
-    /* ==========================================================================
-       SIDE SWITCH BANNER ALERT (Multiple of 7)
-       ========================================================================== */
-
-    function checkSideSwitchBanner() {
-      const total = state.team1.score + state.team2.score;
-      const banner = document.getElementById('switch-banner');
-      const sub = document.getElementById('switch-banner-sub');
-
-      if (state.switchInterval > 0 && total > 0 && total % state.switchInterval === 0) {
-        sub.innerText = `Total points reached multiple of ${state.switchInterval} (Total: ${total})`;
-        banner.classList.remove('hidden');
-      } else {
-        banner.classList.add('hidden');
-      }
-    }
-
-    function dismissSwitchBanner() {
-      document.getElementById('switch-banner').classList.add('hidden');
-    }
-
-    /* ==========================================================================
-       KEYBOARD LISTENER
-       ========================================================================== */
-
-    function setupKeyListeners() {
+    /* Keyboard / Web Fallback */
+    function setupKeyboardListeners() {
       window.addEventListener('keydown', (e) => {
-        const code = e.code || e.key;
-        logRemoteDiagnostic(`Key: [${code}]`);
+        if (e.repeat) return; // Ignore auto-repeat keydown
 
-        if (['ArrowLeft', 'KeyA', 'Enter', 'PageUp'].includes(code)) {
+        const code = e.code || e.key;
+        if (['ArrowLeft', 'KeyA', 'Enter', 'PageUp', 'AudioVolumeUp'].includes(code)) {
           e.preventDefault();
-          triggerTeamScoring('team1');
-        } else if (['ArrowRight', 'KeyB', 'Space', 'PageDown'].includes(code)) {
+          registerScoreEvent('team1');
+        } else if (['ArrowRight', 'KeyB', 'Space', 'PageDown', 'AudioVolumeDown'].includes(code)) {
           e.preventDefault();
-          triggerTeamScoring('team2');
-        } else if (code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
-          undoGlobal();
-        } else if (code === 'KeyS') {
-          swapSides();
-        } else if (code === 'KeyF' || code === 'KeyG') {
-          toggleGiantScoreMode();
+          registerScoreEvent('team2');
+        } else if (code === 'KeyR') {
+          promptReset();
         }
       });
     }
 
-    function logRemoteDiagnostic(msg) {
-      const bar = document.getElementById('live-debug-text');
-      if (bar) bar.innerText = msg;
-    }
-
-    function openKeymapModal() {
-      document.getElementById('modal-keymap').classList.remove('hidden');
-    }
-
-    function closeKeymapModal() {
-      document.getElementById('modal-keymap').classList.add('hidden');
-    }
-
-    /* ==========================================================================
-       MATCH MANAGEMENT & UI RENDERING
-       ========================================================================== */
-
-    function renderUI() {
-      const score1El = document.getElementById('score-team1');
-      const score2El = document.getElementById('score-team2');
-      if (score1El) score1El.innerText = state.team1.score;
-      if (score2El) score2El.innerText = state.team2.score;
-
-      const n1 = document.getElementById('name-team1');
-      const n2 = document.getElementById('name-team2');
-      if (n1) n1.innerText = state.team1.name;
-      if (n2) n2.innerText = state.team2.name;
-
-      const s1 = document.getElementById('sets-team1');
-      const s2 = document.getElementById('sets-team2');
-      if (s1) s1.innerText = state.team1.sets;
-      if (s2) s2.innerText = state.team2.sets;
-
-      const setInd = document.getElementById('set-indicator-text');
-      if (setInd) setInd.innerText = `SET ${state.currentSet}`;
-
-      const total = state.team1.score + state.team2.score;
-      const totalBadge = document.getElementById('total-points-badge');
-      if (totalBadge) totalBadge.innerText = total;
-
-      updateServeBadges();
-
-      const vOn = document.getElementById('voice-icon-on');
-      const vOff = document.getElementById('voice-icon-off');
-      if (vOn) vOn.classList.toggle('hidden', !state.voiceEnabled);
-      if (vOff) vOff.classList.toggle('hidden', state.voiceEnabled);
-
-      const matchBadge = document.getElementById('match-status-badge');
-      if (matchBadge) {
-        if (isSetPoint()) {
-          matchBadge.classList.remove('hidden');
-          matchBadge.innerText = isMatchPoint() ? "MATCH POINT" : "SET POINT";
-        } else {
-          matchBadge.classList.add('hidden');
-        }
-      }
-
-      renderSetHistory();
-      applyLayoutSwap();
-      applyTheme();
-      applyGiantModeUI();
-    }
-
-    function updateServeBadges() {
-      const btn1 = document.getElementById('serve-team1');
-      const btn2 = document.getElementById('serve-team2');
-
-      if (btn1 && btn2) {
-        if (state.server === 'team1') {
-          btn1.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-yellow-400 text-black border-yellow-300";
-          btn2.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-500 border-neutral-800 hover:border-neutral-600";
-        } else {
-          btn2.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-cyan-400 text-black border-cyan-300";
-          btn1.className = "px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1 border-2 transition shadow-md bg-neutral-900 text-neutral-500 border-neutral-800 hover:border-neutral-600";
-        }
-      }
-
-      const dot1 = document.getElementById('giant-serve-dot-team1');
-      const dot2 = document.getElementById('giant-serve-dot-team2');
-      if (dot1 && dot2 && state.isGiantMode) {
-        dot1.classList.toggle('hidden', state.server !== 'team1');
-        dot2.classList.toggle('hidden', state.server !== 'team2');
-      }
-    }
-
-    function setServer(team, event) {
-      if (event) event.stopPropagation();
-      state.server = team;
-      saveState();
-      updateServeBadges();
-      showToast(`${state[team].name} is now serving`);
-      announceScore();
-    }
-
-    function swapSides() {
-      state.isSwapped = !state.isSwapped;
-      saveState();
-      applyLayoutSwap();
-      showToast("Court sides swapped on display");
-    }
-
-    function applyLayoutSwap() {
-      if (state.isGiantMode) return;
-      const container = document.getElementById('scoreboard-container');
-      if (container) {
-        if (state.isSwapped) {
-          container.classList.add('flex-col-reverse', 'md:flex-row-reverse');
-        } else {
-          container.classList.remove('flex-col-reverse', 'md:flex-row-reverse');
-        }
-      }
-    }
-
-    function isSetPoint() {
-      const s1 = state.team1.score;
-      const s2 = state.team2.score;
-      const target = state.targetPoints;
-      return (s1 >= target - 1 && s1 > s2) || (s2 >= target - 1 && s2 > s1);
-    }
-
-    function isMatchPoint() {
-      if (isSetPoint()) {
-        if (state.team1.sets === 1 && state.team1.score > state.team2.score) return true;
-        if (state.team2.sets === 1 && state.team2.score > state.team1.score) return true;
-      }
-      return false;
-    }
-
-    function editTeamName(team, event) {
-      if (event) event.stopPropagation();
-      const current = state[team].name;
-      const newName = prompt(`Enter name for ${current}:`, current);
-      if (newName && newName.trim() !== "") {
-        state[team].name = newName.trim();
-        saveState();
-        renderUI();
-      }
-    }
-
-    function flashCardFeedback(team, type = 'pop') {
+    /* Visual Pulse & Color Feedback */
+    function triggerVisualFeedback(team, type) {
       const scoreEl = document.getElementById(`score-${team}`);
       const glowEl = document.getElementById(`glow-${team}`);
+
       if (scoreEl) {
         scoreEl.classList.remove('animate-scorePop');
-        void scoreEl.offsetWidth;
+        void scoreEl.offsetWidth; // Force reflow
         scoreEl.classList.add('animate-scorePop');
       }
+
       if (glowEl) {
         if (type === 'red') {
-          glowEl.classList.add('bg-red-600/30');
-          setTimeout(() => glowEl.classList.remove('bg-red-600/30'), 300);
+          glowEl.className = 'absolute inset-0 bg-red-600/40 pointer-events-none transition duration-150';
+          setTimeout(() => {
+            glowEl.className = `absolute inset-0 ${team === 'team1' ? 'bg-yellow-500/5' : 'bg-cyan-500/5'} pointer-events-none transition duration-150`;
+          }, 250);
         } else {
-          glowEl.classList.add('brightness-200');
-          setTimeout(() => glowEl.classList.remove('brightness-200'), 200);
+          glowEl.className = 'absolute inset-0 bg-white/20 pointer-events-none transition duration-100';
+          setTimeout(() => {
+            glowEl.className = `absolute inset-0 ${team === 'team1' ? 'bg-yellow-500/5' : 'bg-cyan-500/5'} pointer-events-none transition duration-100`;
+          }, 120);
         }
       }
     }
 
-    function endSet() {
-      const s1 = state.team1.score;
-      const s2 = state.team2.score;
-
-      if (s1 === 0 && s2 === 0) {
-        showToast("Cannot finish set with 0 - 0");
-        return;
-      }
-
-      let winner = s1 > s2 ? 'team1' : 'team2';
-      const winnerName = state[winner].name;
-
-      if (!confirm(`End Set ${state.currentSet}?\nWinner: ${winnerName} (${s1} - ${s2})`)) {
-        return;
-      }
-
-      state[winner].sets += 1;
-      state.setHistory.push({
-        set: state.currentSet,
-        team1Score: s1,
-        team2Score: s2,
-        winner: winner,
-      });
-
-      state.currentSet += 1;
-      state.team1.score = 0;
-      state.team2.score = 0;
-
-      if (state.currentSet === 3) {
-        state.targetPoints = 15;
-        state.switchInterval = 5;
-      }
-
-      saveState();
-      renderUI();
-      dismissSwitchBanner();
-
-      const victoryText = `${winnerName} wins set ${state.currentSet - 1}!`;
-      showToast(victoryText);
-
-      if (state.voiceEnabled) {
-        if (window.AndroidNative && window.AndroidNative.speak) {
-          window.AndroidNative.speak(victoryText);
-        } else if ('speechSynthesis' in window) {
-          const u = new SpeechSynthesisUtterance(victoryText);
-          window.speechSynthesis.speak(u);
-        }
+    function triggerHaptic(duration) {
+      if (window.AndroidNative && window.AndroidNative.vibrate) {
+        window.AndroidNative.vibrate(duration);
+      } else if ('vibrate' in navigator) {
+        navigator.vibrate(duration);
       }
     }
 
-    function renderSetHistory() {
-      const container = document.getElementById('set-history-container');
-      if (!container) return;
-      container.innerHTML = '';
+    function promptReset() {
+      if (confirm("Reset score to 0 - 0?")) {
+        // Clear any pending timers
+        clearTimeout(teamState.team1.timer);
+        clearTimeout(teamState.team2.timer);
+        teamState.team1.timer = null;
+        teamState.team2.timer = null;
+        teamState.team1.status = 'IDLE';
+        teamState.team2.status = 'IDLE';
 
-      state.setHistory.forEach(item => {
-        const badge = document.createElement('span');
-        badge.className = 'px-1.5 py-0.5 bg-neutral-800 rounded border border-neutral-700 text-[10px] text-neutral-300';
-        badge.innerText = `S${item.set}: ${item.team1Score}-${item.team2Score}`;
-        container.appendChild(badge);
-      });
-    }
-
-    function promptResetMatch() {
-      if (confirm("Reset the entire match (all scores, sets, and history)?")) {
-        historyStack.push(JSON.stringify(state));
-        state.team1.score = 0;
-        state.team2.score = 0;
-        state.team1.sets = 0;
-        state.team2.sets = 0;
-        state.currentSet = 1;
-        state.targetPoints = 21;
-        state.switchInterval = 7;
-        state.setHistory = [];
-        saveState();
-        renderUI();
-        dismissSwitchBanner();
-        showToast("Match has been reset");
+        teamState.team1.score = 0;
+        teamState.team2.score = 0;
+        saveScores();
+        renderScores();
+        showToast("Score reset to 0 - 0");
       }
     }
 
-    /* ==========================================================================
-       SETTINGS & THEMES
-       ========================================================================== */
-
-    function openSettingsModal() {
-      document.getElementById('modal-settings').classList.remove('hidden');
-      updateSettingsButtons();
-    }
-
-    function closeSettingsModal() {
-      document.getElementById('modal-settings').classList.add('hidden');
-    }
-
-    function setTargetPoints(pts) {
-      state.targetPoints = pts;
-      saveState();
-      updateSettingsButtons();
-      renderUI();
-    }
-
-    function setSwitchInterval(interval) {
-      state.switchInterval = interval;
-      saveState();
-      updateSettingsButtons();
-      renderUI();
-    }
-
-    function updateSettingsButtons() {
-      [15, 21, 25].forEach(pts => {
-        const btn = document.getElementById(`target-btn-${pts}`);
-        if (btn) {
-          if (state.targetPoints === pts) {
-            btn.className = "py-2 rounded-lg font-black text-sm bg-yellow-400 text-black border-2 border-yellow-400";
-          } else {
-            btn.className = "py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700";
-          }
-        }
-      });
-
-      [7, 5, 0].forEach(i => {
-        const btn = document.getElementById(`switch-btn-${i}`);
-        if (btn) {
-          if (state.switchInterval === i) {
-            btn.className = "py-2 rounded-lg font-black text-sm bg-yellow-400 text-black border-2 border-yellow-400";
-          } else {
-            btn.className = "py-2 rounded-lg font-black text-sm bg-neutral-800 text-neutral-300 border-2 border-neutral-700";
-          }
-        }
-      });
-    }
-
-    function changeTheme(themeName) {
-      state.theme = themeName;
-      saveState();
-      applyTheme();
-    }
-
-    function applyTheme() {
-      const body = document.body;
-      const select = document.getElementById('select-theme');
-      if (select) select.value = state.theme;
-
-      if (state.theme === 'solar') {
-        body.classList.remove('bg-black');
-        body.classList.add('bg-white');
-      } else {
-        body.classList.remove('bg-white');
-        body.classList.add('bg-black');
-      }
-    }
-
-    function toggleFullscreen() {
-      toggleGiantScoreMode();
-    }
-
-    function showToast(message) {
+    function showToast(msg) {
       const toast = document.getElementById('toast');
-      const msg = document.getElementById('toast-msg');
-      if (toast && msg) {
-        msg.innerText = message;
+      const text = document.getElementById('toast-msg');
+      if (toast && text) {
+        text.innerText = msg;
         toast.classList.remove('opacity-0');
         toast.classList.add('opacity-100');
         clearTimeout(toast._timeout);
         toast._timeout = setTimeout(() => {
           toast.classList.remove('opacity-100');
           toast.classList.add('opacity-0');
-        }, 2000);
+        }, 1500);
       }
     }
 
-    window.addEventListener('DOMContentLoaded', initApp);
+    window.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>

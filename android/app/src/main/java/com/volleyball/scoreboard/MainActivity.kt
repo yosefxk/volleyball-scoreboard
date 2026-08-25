@@ -5,10 +5,10 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.speech.tts.TextToSpeech
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowInsets
@@ -21,18 +21,22 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
-import java.util.Locale
 
-class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
-    private var tts: TextToSpeech? = null
-    private var isTtsReady = false
+    private var lastKeyTimeTeam1 = 0L
+    private var lastKeyTimeTeam2 = 0L
+    private val HARDWARE_DEBOUNCE_MS = 150L
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // Lock screen to Landscape orientation for pure horizontal scoreboard
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+
+        // Keep screen awake at all times during match
         try {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } catch (e: Exception) {
@@ -40,12 +44,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         setContentView(R.layout.activity_main)
-
-        try {
-            tts = TextToSpeech(applicationContext, this)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
 
         webView = findViewById(R.id.webView)
         webView.apply {
@@ -65,10 +63,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     return false
                 }
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-                    view?.evaluateJavascript("if (window.setNativeAndroidMode) { window.setNativeAndroidMode(true); }", null)
-                }
             }
             webChromeClient = WebChromeClient()
             addJavascriptInterface(WebAppInterface(this@MainActivity), "AndroidNative")
@@ -83,25 +77,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    override fun onInit(status: Int) {
-        try {
-            if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.US
-                tts?.setSpeechRate(1.05f)
-                isTtsReady = true
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     /**
      * NATIVE HARDWARE KEY INTERCEPTOR:
-     * Directly captures all AB Shutter 3 / Bluetooth selfie remote keys.
-     * Returning TRUE consumes the event so Android volume slider NEVER appears!
+     * - Filters out auto-repeats (repeatCount == 0 only).
+     * - Hardware time debounce (ignores bounce within 150ms).
+     * - Consumes event (returns true) so Android NEVER shows the volume slider!
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.action == KeyEvent.ACTION_DOWN) {
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+            val now = SystemClock.elapsedRealtime()
             when (event.keyCode) {
                 // Team A Triggers (iOS Button / Big Button / Volume Up / Camera / Enter / PageUp)
                 KeyEvent.KEYCODE_VOLUME_UP,
@@ -111,8 +95,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 KeyEvent.KEYCODE_PAGE_UP,
                 KeyEvent.KEYCODE_BUTTON_A,
                 KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                    triggerTeamScore("team1", "Button 1")
-                    return true
+                    if (now - lastKeyTimeTeam1 >= HARDWARE_DEBOUNCE_MS) {
+                        lastKeyTimeTeam1 = now
+                        triggerTeamScore("team1")
+                    }
+                    return true // Consume event
                 }
 
                 // Team B Triggers (Android Button / Small Button / Volume Down / Space / PageDown / Media)
@@ -123,8 +110,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 KeyEvent.KEYCODE_MEDIA_NEXT,
                 KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
                 KeyEvent.KEYCODE_HEADSETHOOK -> {
-                    triggerTeamScore("team2", "Button 2")
-                    return true
+                    if (now - lastKeyTimeTeam2 >= HARDWARE_DEBOUNCE_MS) {
+                        lastKeyTimeTeam2 = now
+                        triggerTeamScore("team2")
+                    }
+                    return true // Consume event
                 }
             }
         } else if (event.action == KeyEvent.ACTION_UP) {
@@ -134,43 +124,19 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 KeyEvent.KEYCODE_SPACE, KeyEvent.KEYCODE_PAGE_UP, KeyEvent.KEYCODE_PAGE_DOWN,
                 KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_BUTTON_B,
                 KeyEvent.KEYCODE_MEDIA_NEXT, KeyEvent.KEYCODE_MEDIA_PREVIOUS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> {
-                    return true
+                    return true // Consume release
                 }
             }
         }
         return super.dispatchKeyEvent(event)
     }
 
-    private fun triggerTeamScore(team: String, source: String) {
+    private fun triggerTeamScore(team: String) {
         runOnUiThread {
             webView.evaluateJavascript(
-                "if (window.handleNativeRemoteClick) { window.handleNativeRemoteClick('$team', '$source'); }",
+                "if (window.handleRemoteClick) { window.handleRemoteClick('$team'); }",
                 null
             )
-        }
-    }
-
-    fun setOrientationNative(mode: String) {
-        runOnUiThread {
-            try {
-                when (mode.lowercase()) {
-                    "landscape" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                    "portrait" -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                    else -> requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    fun speakText(text: String) {
-        try {
-            if (isTtsReady && tts != null) {
-                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "score_${System.currentTimeMillis()}")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -217,30 +183,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    override fun onDestroy() {
-        try {
-            tts?.stop()
-            tts?.shutdown()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        super.onDestroy()
-    }
-
     inner class WebAppInterface(private val activity: MainActivity) {
-        @JavascriptInterface
-        fun speak(text: String) {
-            activity.speakText(text)
-        }
-
         @JavascriptInterface
         fun vibrate(duration: Long) {
             activity.vibratePhone(duration)
-        }
-
-        @JavascriptInterface
-        fun setOrientation(mode: String) {
-            activity.setOrientationNative(mode)
         }
     }
 }
