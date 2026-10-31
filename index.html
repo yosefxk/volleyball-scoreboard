@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Beach Volleyball Scoreboard</title>
   
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -269,6 +269,7 @@
     const STORAGE_KEY = 'vb_scores_offline_v3';
 
     let currentServer = 'team1'; // 'team1' | 'team2'
+    let scoreHistory = []; // Stack of { team, prevServer } for undo
 
     // Independent scoring state machine for each team
     const teamState = {
@@ -348,7 +349,15 @@
         state.timer = null;
 
         // Perform EXACTLY ONE decrement (-1)
-        state.score = Math.max(0, state.score - 1);
+        if (state.score > 0) {
+          state.score -= 1;
+          if (scoreHistory.length > 0) {
+            const last = scoreHistory.pop();
+            if (last.team === team) {
+              currentServer = last.prevServer;
+            }
+          }
+        }
         saveScores();
         renderScores();
         triggerVisualFeedback(team, 'red');
@@ -369,6 +378,7 @@
 
         state.timer = setTimeout(() => {
           // SINGLE CLICK CONFIRMED (+1)
+          scoreHistory.push({ team, prevServer: currentServer });
           state.score += 1;
           currentServer = team; // Serving team becomes who scored!
           saveScores();
@@ -396,19 +406,21 @@
 
     /* Keyboard / Web Fallback */
     function setupKeyboardListeners() {
+      const team1Keys = ['ArrowLeft', 'KeyA', 'Enter', 'PageUp', 'VolumeUp', 'AudioVolumeUp'];
+      const team2Keys = ['ArrowRight', 'KeyB', 'Space', 'PageDown', 'VolumeDown', 'AudioVolumeDown'];
+
       window.addEventListener('keydown', (e) => {
         if (e.repeat) return; // Ignore auto-repeat keydown
 
-        const code = e.code || e.key;
-        if (['ArrowLeft', 'KeyA', 'Enter', 'PageUp', 'AudioVolumeUp'].includes(code)) {
+        if (team1Keys.includes(e.code) || team1Keys.includes(e.key)) {
           e.preventDefault();
           registerScoreEvent('team1');
-        } else if (['ArrowRight', 'KeyB', 'Space', 'PageDown', 'AudioVolumeDown'].includes(code)) {
+        } else if (team2Keys.includes(e.code) || team2Keys.includes(e.key)) {
           e.preventDefault();
           registerScoreEvent('team2');
-        } else if (code === 'KeyR') {
+        } else if (e.code === 'KeyR' || e.key === 'r' || e.key === 'R') {
           promptReset();
-        } else if (code === 'KeyS') {
+        } else if (e.code === 'KeyS' || e.key === 's' || e.key === 'S') {
           toggleServer(currentServer === 'team1' ? 'team2' : 'team1');
         }
       });
@@ -461,6 +473,7 @@
         teamState.team1.score = 0;
         teamState.team2.score = 0;
         currentServer = 'team1';
+        scoreHistory = [];
         saveScores();
         renderScores();
         showToast("Score reset to 0 - 0");
@@ -478,6 +491,14 @@
           toast.classList.remove('toast-show');
         }, 1500);
       }
+    }
+
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+          console.warn('Service worker registration failed:', err);
+        });
+      });
     }
 
     window.addEventListener('DOMContentLoaded', init);
