@@ -70,9 +70,11 @@ jobs:
           body: |
             ### 🏐 Beach Volleyball Scoreboard (v1.0.${{ github.run_number }})
             
-            - **100% Offline**: Zero internet required.
-            - **Serve Indicator**: High-visibility volleyball serve badge (tap badge to toggle server).
-            - **Deterministic Scoring**: Single click = +1, Double click (<380ms) = -1 (undo).
+            - **100% Offline**: Zero internet required (full Service Worker & Android asset support).
+            - **Deterministic Scoring & Hold-to-Undo**: Short tap/press = `+1` point; Hold (`0.55s`) = `-1` point (undo); accidental double-taps are ignored.
+            - **Persistent Match & Point Log (`📋 Log`)**: Tracks every game and records the exact timestamp and running score of every point.
+            - **3-Option `New Game` Dialog**: Prominent Green **New Game & Save Score**, Red **New Game & Discard Score**, and Grey **Cancel**.
+            - **Serve Indicator**: High-visibility volleyball serve badge (auto-updates to scoring team or tap badge to switch server).
           files: dist/volleyball-scoreboard.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -21,7 +21,9 @@ The native Android app intercepts physical hardware keys (Volume Up, Volume Down
 ## 🚀 Web App Features
 
 - **Sunlight & Outdoor Visibility**: High-contrast athletic typography and custom color palettes designed to be legible under bright direct sunlight.
-- **Double-Click Scoring Logic**: Single Click = `+1` point; Rapid Double-Click (< 400ms) = `-1` point (undo).
+- **Deterministic Scoring & Hold-to-Undo**: Short Tap/Press = `+1` point; Long Hold (`0.55s`) = `-1` point (undo); accidental double-taps are ignored.
+- **Persistent Match & Point Log (`📋 Log`)**: Automatically logs every game and records the exact timestamp and running score of every point scored.
+- **3-Option `New Game` Workflow**: Choose between **New Game & Save Score** (Green), **New Game & Discard Score** (Red), or **Cancel** (Grey).
 - **Web Speech API**: Speaks score aloud after every point change.
 - **Court Side Switch Alert**: Animated banner reminder when total points reach a multiple of 7.
 - **Screen Wake Lock API**: Keep the screen awake during entire matches.
