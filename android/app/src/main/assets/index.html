@@ -414,6 +414,99 @@
       font-size: 13px;
     }
 
+    /* NEW GAME MODAL DIALOG */
+    .newgame-card {
+      width: 100%;
+      max-width: 440px;
+      background-color: #121215;
+      border: 1px solid #27272A;
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95);
+    }
+
+    .newgame-title {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #FFFFFF;
+      text-align: center;
+    }
+
+    .newgame-subtitle {
+      font-size: 13px;
+      color: #A1A1AA;
+      text-align: center;
+      font-weight: 600;
+      margin-top: -6px;
+    }
+
+    .newgame-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .ng-btn {
+      width: 100%;
+      border-radius: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.1s ease, filter 0.15s ease;
+    }
+
+    .ng-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Prominent, larger Green button: New Game & Save Score */
+    .ng-btn-save {
+      padding: 18px 20px;
+      font-size: 16px;
+      background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+      color: #FFFFFF;
+      border: 2px solid #22c55e;
+      box-shadow: 0 6px 24px rgba(34, 197, 94, 0.35);
+    }
+
+    .ng-btn-row {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    /* Smaller Red button: New Game & Discard Score */
+    .ng-btn-discard {
+      flex: 1.25;
+      padding: 12px 14px;
+      font-size: 12px;
+      background-color: rgba(220, 38, 38, 0.2);
+      color: #FCA5A5;
+      border: 1px solid #ef4444;
+    }
+
+    /* Smaller Grey button: Cancel */
+    .ng-btn-cancel {
+      flex: 1;
+      padding: 12px 14px;
+      font-size: 12px;
+      background-color: #27272A;
+      color: #D4D4D8;
+      border: 1px solid #52525B;
+    }
+
     /* TOAST NOTIFICATION */
     .toast {
       position: fixed;
@@ -448,15 +541,36 @@
 </head>
 <body>
 
-  <!-- TOP CENTER CONTROLS (Reset Game + Match History Log) -->
+  <!-- TOP CENTER CONTROLS (New Game + Match History Log) -->
   <div class="top-controls">
-    <button id="btn-reset" onclick="promptReset()" class="ctrl-btn" title="Archive current game and reset score to 0 - 0">
-      <span>Reset Game</span>
+    <button id="btn-reset" onclick="promptNewGame()" class="ctrl-btn" title="Start a new game">
+      <span>New Game</span>
     </button>
     <button id="btn-history" onclick="toggleHistoryModal(true)" class="ctrl-btn" title="View all games and point-by-point timestamps">
       <span>📋 Log</span>
       <span id="log-count-badge" class="log-count-pill">0</span>
     </button>
+  </div>
+
+  <!-- NEW GAME 3-OPTION MODAL -->
+  <div id="newgame-modal" class="modal-backdrop hidden" onclick="if (event.target === this) toggleNewGameModal(false)">
+    <div class="newgame-card">
+      <div class="newgame-title">Start New Game?</div>
+      <div id="newgame-score-summary" class="newgame-subtitle">Current Score: 0 - 0</div>
+      <div class="newgame-actions">
+        <button onclick="confirmNewGame(true)" class="ng-btn ng-btn-save">
+          <span>✓ New Game &amp; Save Score</span>
+        </button>
+        <div class="ng-btn-row">
+          <button onclick="toggleNewGameModal(false)" class="ng-btn ng-btn-cancel">
+            <span>Cancel</span>
+          </button>
+          <button onclick="confirmNewGame(false)" class="ng-btn ng-btn-discard">
+            <span>✕ New Game &amp; Discard Score</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- MATCH & POINT HISTORY MODAL -->
@@ -467,7 +581,6 @@
           <span>🏐 Match &amp; Point Log</span>
         </div>
         <div class="modal-actions">
-          <button onclick="clearMatchHistory()" class="modal-btn modal-btn-danger" title="Clear archived games">Clear Archive</button>
           <button onclick="toggleHistoryModal(false)" class="modal-btn">Close ✕</button>
         </div>
       </div>
@@ -844,6 +957,7 @@
         // Ignore if modal is open and user presses Escape
         if (e.key === 'Escape') {
           toggleHistoryModal(false);
+          toggleNewGameModal(false);
           return;
         }
         if (e.repeat) return; // Ignore OS key-repeat events while holding
@@ -856,8 +970,8 @@
           e.preventDefault();
           document.activeElement?.blur();
           handlePressStart('team2');
-        } else if (e.code === 'KeyR' || e.key === 'r' || e.key === 'R') {
-          promptReset();
+        } else if (e.code === 'KeyR' || e.key === 'r' || e.key === 'R' || e.code === 'KeyN' || e.key === 'n' || e.key === 'N') {
+          promptNewGame();
         } else if (e.code === 'KeyS' || e.key === 's' || e.key === 'S') {
           toggleServer(currentServer === 'team1' ? 'team2' : 'team1');
         } else if (e.code === 'KeyL' || e.key === 'l' || e.key === 'L') {
@@ -910,41 +1024,64 @@
       }
     }
 
-    function promptReset() {
+    function promptNewGame() {
       document.activeElement?.blur();
-      const hasScoreOrPoints = teamState.team1.score > 0 || teamState.team2.score > 0 || currentPointsLog.length > 0;
-      const confirmMsg = hasScoreOrPoints
-        ? `Save current game (${teamState.team1.score} - ${teamState.team2.score}) to Match Log and reset to 0 - 0?`
-        : "Reset score to 0 - 0?";
+      handlePressCancel('team1');
+      handlePressCancel('team2');
+      toggleNewGameModal(true);
+    }
 
-      if (confirm(confirmMsg)) {
-        handlePressCancel('team1');
-        handlePressCancel('team2');
-
-        // Archive current game if at least one point was scored
-        if (hasScoreOrPoints) {
-          const nowIso = new Date().toISOString();
-          gamesArchive.unshift({
-            id: 'game-' + Date.now(),
-            gameNumber: gamesArchive.length + 1,
-            startedAt: currentGameStartedAt || (currentPointsLog[0] && currentPointsLog[0].timestamp) || nowIso,
-            endedAt: nowIso,
-            finalScore1: teamState.team1.score,
-            finalScore2: teamState.team2.score,
-            points: currentPointsLog.slice()
-          });
+    function toggleNewGameModal(forceState) {
+      document.activeElement?.blur();
+      const modal = document.getElementById('newgame-modal');
+      if (!modal) return;
+      const shouldOpen = forceState !== undefined ? forceState : modal.classList.contains('hidden');
+      if (shouldOpen) {
+        const sub = document.getElementById('newgame-score-summary');
+        if (sub) {
+          sub.innerText = `Current Score: ${teamState.team1.score} - ${teamState.team2.score} (${currentPointsLog.length} points)`;
         }
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
 
-        teamState.team1.score = 0;
-        teamState.team2.score = 0;
-        currentServer = 'team1';
-        currentGameStartedAt = null;
-        currentPointsLog = [];
+    function confirmNewGame(saveScore) {
+      handlePressCancel('team1');
+      handlePressCancel('team2');
 
-        saveState();
-        renderScores();
-        renderHistoryModal();
-        showToast(hasScoreOrPoints ? "Game saved to Log & reset to 0 - 0" : "Score reset to 0 - 0");
+      const hasScoreOrPoints = teamState.team1.score > 0 || teamState.team2.score > 0 || currentPointsLog.length > 0;
+
+      if (saveScore && hasScoreOrPoints) {
+        const nowIso = new Date().toISOString();
+        gamesArchive.unshift({
+          id: 'game-' + Date.now(),
+          gameNumber: gamesArchive.length + 1,
+          startedAt: currentGameStartedAt || (currentPointsLog[0] && currentPointsLog[0].timestamp) || nowIso,
+          endedAt: nowIso,
+          finalScore1: teamState.team1.score,
+          finalScore2: teamState.team2.score,
+          points: currentPointsLog.slice()
+        });
+      }
+
+      teamState.team1.score = 0;
+      teamState.team2.score = 0;
+      currentServer = 'team1';
+      currentGameStartedAt = null;
+      currentPointsLog = [];
+
+      saveState();
+      renderScores();
+      renderHistoryModal();
+      toggleNewGameModal(false);
+      triggerHaptic(50);
+
+      if (saveScore) {
+        showToast(hasScoreOrPoints ? "Game saved to Log & new game started" : "New game started (0 - 0)");
+      } else {
+        showToast("Score discarded & new game started");
       }
     }
 
@@ -965,17 +1102,6 @@
       const el = document.getElementById(cardId);
       if (el) {
         el.classList.toggle('hidden');
-      }
-    }
-
-    function clearMatchHistory() {
-      if (gamesArchive.length === 0) return;
-      if (confirm("Clear all archived games from the Match Log?")) {
-        gamesArchive = [];
-        saveState();
-        renderScores();
-        renderHistoryModal();
-        showToast("Archived games cleared");
       }
     }
 
