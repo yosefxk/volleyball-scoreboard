@@ -25,9 +25,11 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
-    private var lastKeyTimeTeam1 = 0L
-    private var lastKeyTimeTeam2 = 0L
-    private val HARDWARE_DEBOUNCE_MS = 150L
+    private var lastKeyDownTimeTeam1 = 0L
+    private var lastKeyDownTimeTeam2 = 0L
+    private var isKeyDownTeam1 = false
+    private var isKeyDownTeam2 = false
+    private val HARDWARE_DEBOUNCE_MS = 120L
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,65 +81,81 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * NATIVE HARDWARE KEY INTERCEPTOR:
-     * - Filters out auto-repeats (repeatCount == 0 only).
-     * - Hardware time debounce (ignores bounce within 150ms).
+     * - Forwards ACTION_DOWN (repeatCount == 0) and ACTION_UP to the JS scoring engine
+     *   so short press = +1, long hold = -1, and rapid double-taps are ignored.
      * - Consumes event (returns true) so Android NEVER shows the volume slider!
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-            val now = SystemClock.elapsedRealtime()
-            when (event.keyCode) {
-                // Team A Triggers (iOS Button / Big Button / Volume Up / Camera / Enter / PageUp)
-                KeyEvent.KEYCODE_VOLUME_UP,
-                KeyEvent.KEYCODE_CAMERA,
-                KeyEvent.KEYCODE_ENTER,
-                KeyEvent.KEYCODE_DPAD_CENTER,
-                KeyEvent.KEYCODE_PAGE_UP,
-                KeyEvent.KEYCODE_BUTTON_A,
-                KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                    if (now - lastKeyTimeTeam1 >= HARDWARE_DEBOUNCE_MS) {
-                        lastKeyTimeTeam1 = now
-                        triggerTeamScore("team1")
-                    }
-                    return true // Consume event
-                }
+        val code = event.keyCode
+        val isTeam1Key = code == KeyEvent.KEYCODE_VOLUME_UP ||
+            code == KeyEvent.KEYCODE_CAMERA ||
+            code == KeyEvent.KEYCODE_ENTER ||
+            code == KeyEvent.KEYCODE_DPAD_CENTER ||
+            code == KeyEvent.KEYCODE_PAGE_UP ||
+            code == KeyEvent.KEYCODE_BUTTON_A ||
+            code == KeyEvent.KEYCODE_MEDIA_PREVIOUS
 
-                // Team B Triggers (Android Button / Small Button / Volume Down / Space / PageDown / Media)
-                KeyEvent.KEYCODE_VOLUME_DOWN,
-                KeyEvent.KEYCODE_SPACE,
-                KeyEvent.KEYCODE_PAGE_DOWN,
-                KeyEvent.KEYCODE_BUTTON_B,
-                KeyEvent.KEYCODE_MEDIA_NEXT,
-                KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
-                KeyEvent.KEYCODE_HEADSETHOOK -> {
-                    if (now - lastKeyTimeTeam2 >= HARDWARE_DEBOUNCE_MS) {
-                        lastKeyTimeTeam2 = now
-                        triggerTeamScore("team2")
+        val isTeam2Key = code == KeyEvent.KEYCODE_VOLUME_DOWN ||
+            code == KeyEvent.KEYCODE_SPACE ||
+            code == KeyEvent.KEYCODE_PAGE_DOWN ||
+            code == KeyEvent.KEYCODE_BUTTON_B ||
+            code == KeyEvent.KEYCODE_MEDIA_NEXT ||
+            code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
+            code == KeyEvent.KEYCODE_HEADSETHOOK
+
+        if (isTeam1Key) {
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                if (event.repeatCount == 0 && !isKeyDownTeam1) {
+                    val now = SystemClock.elapsedRealtime()
+                    if (now - lastKeyDownTimeTeam1 >= HARDWARE_DEBOUNCE_MS) {
+                        lastKeyDownTimeTeam1 = now
+                        isKeyDownTeam1 = true
+                        triggerRemoteKeyEvent("team1", "down")
                     }
-                    return true // Consume event
                 }
+                return true
+            } else if (event.action == KeyEvent.ACTION_UP) {
+                if (isKeyDownTeam1) {
+                    isKeyDownTeam1 = false
+                    triggerRemoteKeyEvent("team1", "up")
+                }
+                return true
             }
-        } else if (event.action == KeyEvent.ACTION_UP) {
-            when (event.keyCode) {
-                KeyEvent.KEYCODE_VOLUME_UP, KeyEvent.KEYCODE_VOLUME_DOWN,
-                KeyEvent.KEYCODE_CAMERA, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER,
-                KeyEvent.KEYCODE_SPACE, KeyEvent.KEYCODE_PAGE_UP, KeyEvent.KEYCODE_PAGE_DOWN,
-                KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_BUTTON_B,
-                KeyEvent.KEYCODE_MEDIA_NEXT, KeyEvent.KEYCODE_MEDIA_PREVIOUS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
-                KeyEvent.KEYCODE_HEADSETHOOK -> {
-                    return true // Consume release
+        } else if (isTeam2Key) {
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                if (event.repeatCount == 0 && !isKeyDownTeam2) {
+                    val now = SystemClock.elapsedRealtime()
+                    if (now - lastKeyDownTimeTeam2 >= HARDWARE_DEBOUNCE_MS) {
+                        lastKeyDownTimeTeam2 = now
+                        isKeyDownTeam2 = true
+                        triggerRemoteKeyEvent("team2", "down")
+                    }
                 }
+                return true
+            } else if (event.action == KeyEvent.ACTION_UP) {
+                if (isKeyDownTeam2) {
+                    isKeyDownTeam2 = false
+                    triggerRemoteKeyEvent("team2", "up")
+                }
+                return true
             }
         }
         return super.dispatchKeyEvent(event)
     }
 
-    private fun triggerTeamScore(team: String) {
+    private fun triggerRemoteKeyEvent(team: String, action: String) {
         runOnUiThread {
-            webView.evaluateJavascript(
-                "if (window.handleRemoteClick) { window.handleRemoteClick('$team'); }",
-                null
-            )
+            if (action == "down") {
+                webView.evaluateJavascript(
+                    "if (window.handleRemoteKeyDown) { window.handleRemoteKeyDown('$team'); } else if (window.handleRemoteClick) { window.handleRemoteClick('$team'); }",
+                    null
+                )
+            } else {
+                webView.evaluateJavascript(
+                    "if (window.handleRemoteKeyUp) { window.handleRemoteKeyUp('$team'); }",
+                    null
+                )
+            }
         }
     }
 

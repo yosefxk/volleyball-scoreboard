@@ -19,6 +19,7 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     html, body {
@@ -50,6 +51,7 @@
       position: relative;
       cursor: pointer;
       overflow: hidden;
+      touch-action: none;
     }
 
     #panel-team1 {
@@ -65,6 +67,7 @@
       font-variant-numeric: tabular-nums;
       text-shadow: 0 10px 35px rgba(0, 0, 0, 0.95);
       transition: transform 0.15s ease-out;
+      pointer-events: none;
     }
 
     .score-team1 {
@@ -73,6 +76,25 @@
 
     .score-team2 {
       color: #00F0FF; /* High-Vis Neon Cyan */
+    }
+
+    /* HOLD PROGRESS BAR (Shows during long-press to -1) */
+    .hold-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 6px;
+      width: 0%;
+      background: linear-gradient(90deg, #ef4444, #f97316);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 25;
+    }
+
+    .hold-active {
+      opacity: 1;
+      width: 100%;
+      transition: width 0.55s linear;
     }
 
     /* GLOW & FLASH FEEDBACK LAYERS */
@@ -139,16 +161,22 @@
       background-color: #00F0FF;
     }
 
-    /* FLOATING RESET BUTTON (Top Center) */
-    .reset-btn {
+    /* TOP CENTER CONTROLS BAR (Reset + Match Log) */
+    .top-controls {
       position: fixed;
       top: 12px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 40;
-      padding: 6px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ctrl-btn {
+      padding: 6px 16px;
       border-radius: 9999px;
-      background-color: rgba(24, 24, 27, 0.85);
+      background-color: rgba(24, 24, 27, 0.88);
       color: #A1A1AA;
       border: 1px solid #3F3F46;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -159,16 +187,231 @@
       cursor: pointer;
       backdrop-filter: blur(8px);
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
-      transition: background-color 0.15s, color 0.15s, transform 0.1s;
+      transition: background-color 0.15s, color 0.15s, transform 0.1s, border-color 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
     }
 
-    .reset-btn:hover {
+    .ctrl-btn:hover {
       color: #FFFFFF;
       background-color: rgba(39, 39, 42, 0.95);
     }
 
-    .reset-btn:active {
-      transform: translateX(-50%) scale(0.95);
+    .ctrl-btn:active {
+      transform: scale(0.95);
+    }
+
+    .log-count-pill {
+      background-color: #27272A;
+      color: #FAFF00;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    /* MATCH LOG MODAL OVERLAY */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background-color: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 720px;
+      max-height: 88vh;
+      background-color: #121215;
+      border: 1px solid #27272A;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95);
+    }
+
+    .modal-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid #27272A;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #18181B;
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-btn {
+      padding: 5px 12px;
+      border-radius: 8px;
+      background-color: #27272A;
+      color: #E4E4E7;
+      border: 1px solid #3F3F46;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+    }
+
+    .modal-btn-danger {
+      color: #FCA5A5;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    .modal-body {
+      padding: 14px 18px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+    }
+
+    .game-card {
+      background-color: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .game-card.live-game {
+      border-color: rgba(250, 255, 0, 0.45);
+    }
+
+    .game-summary {
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      gap: 12px;
+    }
+
+    .game-summary:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .game-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .game-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: #E4E4E7;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-pill {
+      background-color: rgba(250, 255, 0, 0.15);
+      color: #FAFF00;
+      border: 1px solid rgba(250, 255, 0, 0.4);
+      padding: 1px 6px;
+      border-radius: 9999px;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .game-submeta {
+      font-size: 11px;
+      color: #71717A;
+    }
+
+    .game-final-score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .t1-text { color: #FAFF00; }
+    .t2-text { color: #00F0FF; }
+    .score-sep { color: #52525B; font-size: 15px; }
+
+    .points-timeline {
+      border-top: 1px solid #27272A;
+      background-color: #0E0E11;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .point-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      background-color: rgba(255, 255, 255, 0.02);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .point-idx {
+      color: #71717A;
+      font-weight: 700;
+      min-width: 36px;
+    }
+
+    .point-team {
+      font-weight: 800;
+      flex: 1;
+    }
+
+    .point-score {
+      font-weight: 900;
+      margin: 0 12px;
+      color: #E4E4E7;
+    }
+
+    .point-time {
+      color: #A1A1AA;
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .empty-log {
+      text-align: center;
+      padding: 32px 16px;
+      color: #71717A;
+      font-size: 13px;
     }
 
     /* TOAST NOTIFICATION */
@@ -205,10 +448,32 @@
 </head>
 <body>
 
-  <!-- FLOATING RESET BUTTON (Top Center) -->
-  <button onclick="promptReset()" class="reset-btn">
-    Reset Game
-  </button>
+  <!-- TOP CENTER CONTROLS (Reset Game + Match History Log) -->
+  <div class="top-controls">
+    <button id="btn-reset" onclick="promptReset()" class="ctrl-btn" title="Archive current game and reset score to 0 - 0">
+      <span>Reset Game</span>
+    </button>
+    <button id="btn-history" onclick="toggleHistoryModal(true)" class="ctrl-btn" title="View all games and point-by-point timestamps">
+      <span>📋 Log</span>
+      <span id="log-count-badge" class="log-count-pill">0</span>
+    </button>
+  </div>
+
+  <!-- MATCH & POINT HISTORY MODAL -->
+  <div id="history-modal" class="modal-backdrop hidden" onclick="if (event.target === this) toggleHistoryModal(false)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🏐 Match &amp; Point Log</span>
+        </div>
+        <div class="modal-actions">
+          <button onclick="clearMatchHistory()" class="modal-btn modal-btn-danger" title="Clear archived games">Clear Archive</button>
+          <button onclick="toggleHistoryModal(false)" class="modal-btn">Close ✕</button>
+        </div>
+      </div>
+      <div id="history-modal-body" class="modal-body"></div>
+    </div>
+  </div>
 
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast">
@@ -219,16 +484,20 @@
   <main class="arena">
 
     <!-- TEAM A (LEFT HALF - NEON YELLOW) -->
-    <section id="panel-team1" class="team-panel" onclick="handleScreenClick('team1')">
+    <section id="panel-team1" class="team-panel">
       
       <!-- Serve Indicator Badge (Team A) -->
-      <div id="serve-badge-team1" class="serve-badge" onclick="event.stopPropagation(); toggleServer('team2');" title="Click to switch server">
+      <div id="serve-badge-team1" class="serve-badge"
+           onpointerdown="event.stopPropagation();"
+           onclick="event.stopPropagation(); toggleServer('team2');"
+           title="Tap to switch server">
         <span>🏐</span>
         <span>SERVE</span>
       </div>
 
       <!-- Visual Flash Feedback Layer -->
       <div id="glow-team1" class="glow-layer"></div>
+      <div id="hold-team1" class="hold-progress"></div>
       
       <!-- Massive Score Display -->
       <div id="score-team1" class="giant-score score-team1">
@@ -237,16 +506,20 @@
     </section>
 
     <!-- TEAM B (RIGHT HALF - NEON CYAN) -->
-    <section id="panel-team2" class="team-panel" onclick="handleScreenClick('team2')">
+    <section id="panel-team2" class="team-panel">
       
       <!-- Serve Indicator Badge (Team B) -->
-      <div id="serve-badge-team2" class="serve-badge hidden" onclick="event.stopPropagation(); toggleServer('team1');" title="Click to switch server">
+      <div id="serve-badge-team2" class="serve-badge hidden"
+           onpointerdown="event.stopPropagation();"
+           onclick="event.stopPropagation(); toggleServer('team1');"
+           title="Tap to switch server">
         <span>🏐</span>
         <span>SERVE</span>
       </div>
 
       <!-- Visual Flash Feedback Layer -->
       <div id="glow-team2" class="glow-layer"></div>
+      <div id="hold-team2" class="hold-progress"></div>
 
       <!-- Massive Score Display -->
       <div id="score-team2" class="giant-score score-team2">
@@ -259,34 +532,47 @@
   <script>
     /* ==========================================================================
        100% OFFLINE DETERMINISTIC BEACH VOLLEYBALL SCORING ENGINE
-       - Zero network requests / Works completely offline
-       - Single Click: Exactly +1 (after 380ms)
-       - Double Click (<380ms): Exactly -1 (Undo)
-       - Cooldown / Debounce: Mathematically blocks cascading +/- glitches
-       - Server Indicator: Moves to scoring team or tap to toggle
+       - Short Tap / Click: +1 Point (Double-tap ignored via 450ms lockout)
+       - Hold (>= 550ms):   -1 Point (Decrements score & removes team's last point)
+       - Reset Game:        Archives finished game with full point-by-point timestamps
        ========================================================================== */
 
-    const STORAGE_KEY = 'vb_scores_offline_v3';
+    const STORAGE_KEY = 'vb_scores_offline_v4';
+    const HISTORY_STORAGE_KEY = 'vb_games_history_v1';
+
+    const HOLD_DURATION_MS = 550;       // Holding button/screen for 550ms decreases score by 1
+    const POST_ACTION_COOLDOWN_MS = 450; // Ignores second tap of a double-tap!
 
     let currentServer = 'team1'; // 'team1' | 'team2'
-    let scoreHistory = []; // Stack of { team, prevServer } for undo
+    let currentGameStartedAt = null;
+    let currentPointsLog = [];   // Array of { id, team, score1, score2, prevServer, timestamp, timeStr }
+    let gamesArchive = [];       // Array of archived games: { id, gameNumber, startedAt, endedAt, finalScore1, finalScore2, points: [...] }
 
-    // Independent scoring state machine for each team
+    // Per-team press/hold state machine
     const teamState = {
-      team1: { score: 0, timer: null, status: 'IDLE' }, // 'IDLE' | 'WAITING' | 'COOLDOWN'
-      team2: { score: 0, timer: null, status: 'IDLE' }
+      team1: { score: 0, isPressed: false, holdFired: false, holdTimer: null, lastActionAt: 0 },
+      team2: { score: 0, isPressed: false, holdFired: false, holdTimer: null, lastActionAt: 0 }
     };
 
-    const DOUBLE_CLICK_WINDOW_MS = 380;
-    const COOLDOWN_LOCKOUT_MS = 350;
-
     function init() {
-      loadSavedScores();
+      loadSavedState();
       renderScores();
+      setupPointerListeners();
       setupKeyboardListeners();
     }
 
-    function loadSavedScores() {
+    function formatClockTime(isoOrDate) {
+      const d = isoOrDate ? new Date(isoOrDate) : new Date();
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    }
+
+    function formatDateTimeShort(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + formatClockTime(d);
+    }
+
+    function loadSavedState() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -294,17 +580,44 @@
           teamState.team1.score = parsed.s1 || 0;
           teamState.team2.score = parsed.s2 || 0;
           currentServer = parsed.srv || 'team1';
+          currentGameStartedAt = parsed.startedAt || null;
+          currentPointsLog = Array.isArray(parsed.pointsLog) ? parsed.pointsLog : [];
+        } else {
+          // Migrate v3 scores if present
+          const legacy = localStorage.getItem('vb_scores_offline_v3');
+          if (legacy) {
+            const parsedLegacy = JSON.parse(legacy);
+            teamState.team1.score = parsedLegacy.s1 || 0;
+            teamState.team2.score = parsedLegacy.s2 || 0;
+            currentServer = parsedLegacy.srv || 'team1';
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
+        if (savedHistory) {
+          const parsedHistory = JSON.parse(savedHistory);
+          if (Array.isArray(parsedHistory)) {
+            gamesArchive = parsedHistory;
+          }
         }
       } catch (e) {}
     }
 
-    function saveScores() {
+    function saveState() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
           s1: teamState.team1.score,
           s2: teamState.team2.score,
-          srv: currentServer
+          srv: currentServer,
+          startedAt: currentGameStartedAt,
+          pointsLog: currentPointsLog
         }));
+      } catch (e) {}
+
+      try {
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(gamesArchive));
       } catch (e) {}
     }
 
@@ -318,110 +631,247 @@
         b1.classList.toggle('hidden', currentServer !== 'team1');
         b2.classList.toggle('hidden', currentServer !== 'team2');
       }
+
+      const logBadge = document.getElementById('log-count-badge');
+      if (logBadge) {
+        const activeCount = (teamState.team1.score > 0 || teamState.team2.score > 0 || currentPointsLog.length > 0) ? 1 : 0;
+        logBadge.innerText = gamesArchive.length + activeCount;
+      }
     }
 
     function toggleServer(newServer) {
       currentServer = newServer;
-      saveScores();
+      saveState();
       renderScores();
       showToast(`${newServer === 'team1' ? 'Team A' : 'Team B'} is serving`);
       triggerHaptic(30);
     }
 
+    function setHoldProgress(team, active) {
+      const bar = document.getElementById(`hold-${team}`);
+      if (!bar) return;
+      if (active) {
+        bar.classList.remove('hold-active');
+        void bar.offsetWidth;
+        bar.classList.add('hold-active');
+      } else {
+        bar.classList.remove('hold-active');
+      }
+    }
+
     /**
-     * Core Scoring Event Handler:
-     * Guarantees that each user interaction can ONLY EVER produce:
-     * - Exactly +1 (single press)
-     * - Exactly -1 (rapid double press)
+     * Press & Hold State Machine:
+     * - Press starts a 550ms hold timer.
+     * - If held for >= 550ms -> Decreases score by 1 (-1) immediately while held.
+     * - If released before 550ms -> Increases score by 1 (+1), UNLESS within the
+     *   450ms post-action cooldown window (so double-tapping a button does nothing!).
      */
-    function registerScoreEvent(team) {
+    function handlePressStart(team) {
       const state = teamState[team];
+      if (state.isPressed) return;
 
-      // 1. If currently in cooldown lockout, ignore bounce or trailing clicks
-      if (state.status === 'COOLDOWN') {
+      const now = Date.now();
+      // Ignore rapid second tap (double-tap does nothing)
+      if (now - state.lastActionAt < POST_ACTION_COOLDOWN_MS) {
         return;
       }
 
-      // 2. If a single click is already pending, this is a DOUBLE CLICK (-1 UNDO)
-      if (state.status === 'WAITING') {
-        // Cancel the pending +1 timer
-        clearTimeout(state.timer);
-        state.timer = null;
+      state.isPressed = true;
+      state.holdFired = false;
+      setHoldProgress(team, true);
 
-        // Perform EXACTLY ONE decrement (-1)
-        if (state.score > 0) {
-          state.score -= 1;
-          if (scoreHistory.length > 0) {
-            const last = scoreHistory.pop();
-            if (last.team === team) {
-              currentServer = last.prevServer;
-            }
-          }
-        }
-        saveScores();
-        renderScores();
+      clearTimeout(state.holdTimer);
+      state.holdTimer = setTimeout(() => {
+        if (!state.isPressed) return;
+        state.holdFired = true;
+        state.lastActionAt = Date.now();
+        setHoldProgress(team, false);
+        decrementTeamScore(team);
+      }, HOLD_DURATION_MS);
+    }
+
+    function handlePressEnd(team) {
+      const state = teamState[team];
+      if (!state.isPressed) return;
+
+      clearTimeout(state.holdTimer);
+      state.holdTimer = null;
+      state.isPressed = false;
+      setHoldProgress(team, false);
+
+      // If hold already triggered -1, do nothing on release
+      if (state.holdFired) {
+        state.holdFired = false;
+        return;
+      }
+
+      const now = Date.now();
+      if (now - state.lastActionAt < POST_ACTION_COOLDOWN_MS) {
+        return;
+      }
+
+      state.lastActionAt = now;
+      incrementTeamScore(team);
+    }
+
+    function handlePressCancel(team) {
+      const state = teamState[team];
+      clearTimeout(state.holdTimer);
+      state.holdTimer = null;
+      state.isPressed = false;
+      state.holdFired = false;
+      setHoldProgress(team, false);
+    }
+
+    function incrementTeamScore(team) {
+      const state = teamState[team];
+      const nowIso = new Date().toISOString();
+      if (!currentGameStartedAt) {
+        currentGameStartedAt = nowIso;
+      }
+
+      const prevServer = currentServer;
+      state.score += 1;
+      currentServer = team; // Serving team becomes who scored
+
+      currentPointsLog.push({
+        id: Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        team: team,
+        score1: teamState.team1.score,
+        score2: teamState.team2.score,
+        prevServer: prevServer,
+        timestamp: nowIso,
+        timeStr: formatClockTime(nowIso)
+      });
+
+      saveState();
+      renderScores();
+      triggerVisualFeedback(team, 'pop');
+      triggerHaptic(40);
+    }
+
+    function decrementTeamScore(team) {
+      const state = teamState[team];
+      if (state.score <= 0) {
         triggerVisualFeedback(team, 'red');
-        triggerHaptic(80);
-
-        // Enter cooldown lockout to prevent trailing clicks from triggering +1
-        state.status = 'COOLDOWN';
-        setTimeout(() => {
-          state.status = 'IDLE';
-        }, COOLDOWN_LOCKOUT_MS);
+        triggerHaptic(60);
+        showToast(`${team === 'team1' ? 'Team A' : 'Team B'} is already at 0`);
         return;
       }
 
-      // 3. FIRST CLICK (Start waiting for possible double click)
-      if (state.status === 'IDLE') {
-        state.status = 'WAITING';
-        triggerVisualFeedback(team, 'pop');
+      state.score -= 1;
 
-        state.timer = setTimeout(() => {
-          // SINGLE CLICK CONFIRMED (+1)
-          scoreHistory.push({ team, prevServer: currentServer });
-          state.score += 1;
-          currentServer = team; // Serving team becomes who scored!
-          saveScores();
-          renderScores();
-          triggerHaptic(40);
-
-          state.timer = null;
-          state.status = 'COOLDOWN';
-          setTimeout(() => {
-            state.status = 'IDLE';
-          }, 80);
-        }, DOUBLE_CLICK_WINDOW_MS);
+      // Remove the most recent point scored by this team from the current game's point log
+      for (let i = currentPointsLog.length - 1; i >= 0; i--) {
+        if (currentPointsLog[i].team === team) {
+          const removed = currentPointsLog.splice(i, 1)[0];
+          // If this was the very last point scored in the game, restore prior server
+          if (i === currentPointsLog.length && removed.prevServer) {
+            currentServer = removed.prevServer;
+          }
+          // Recalculate running score1/score2 on any subsequent points in the log
+          let s1 = 0;
+          let s2 = 0;
+          for (let j = 0; j < currentPointsLog.length; j++) {
+            if (currentPointsLog[j].team === 'team1') s1++;
+            else s2++;
+            currentPointsLog[j].score1 = s1;
+            currentPointsLog[j].score2 = s2;
+          }
+          break;
+        }
       }
+
+      saveState();
+      renderScores();
+      triggerVisualFeedback(team, 'red');
+      triggerHaptic(90);
+      showToast(`${team === 'team1' ? 'Team A' : 'Team B'} -1 point`);
     }
 
-    /* Screen Tap Handler */
-    function handleScreenClick(team) {
-      registerScoreEvent(team);
+    /* Pointer Listeners for Touch / Mouse on Both Team Panels */
+    function setupPointerListeners() {
+      ['team1', 'team2'].forEach((team) => {
+        const panel = document.getElementById(`panel-${team}`);
+        if (!panel) return;
+
+        panel.addEventListener('pointerdown', (e) => {
+          if (e.button !== undefined && e.button !== 0) return;
+          e.preventDefault();
+          handlePressStart(team);
+        });
+
+        panel.addEventListener('pointerup', (e) => {
+          e.preventDefault();
+          handlePressEnd(team);
+        });
+
+        panel.addEventListener('pointercancel', () => {
+          handlePressCancel(team);
+        });
+
+        panel.addEventListener('pointerleave', () => {
+          handlePressCancel(team);
+        });
+
+        panel.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+        });
+      });
     }
 
-    /* Native Android Remote Key Handler (called from MainActivity) */
-    window.handleRemoteClick = function(team) {
-      registerScoreEvent(team);
+    /* Native Android Remote Key Handlers (called from MainActivity.kt) */
+    window.handleRemoteKeyDown = function(team) {
+      handlePressStart(team);
     };
 
-    /* Keyboard / Web Fallback */
+    window.handleRemoteKeyUp = function(team) {
+      handlePressEnd(team);
+    };
+
+    /* Legacy fallback if older native APK calls handleRemoteClick */
+    window.handleRemoteClick = function(team) {
+      handlePressStart(team);
+      setTimeout(() => handlePressEnd(team), 50);
+    };
+
+    /* Keyboard / Bluetooth Remote Web Listeners */
     function setupKeyboardListeners() {
       const team1Keys = ['ArrowLeft', 'KeyA', 'Enter', 'PageUp', 'VolumeUp', 'AudioVolumeUp'];
       const team2Keys = ['ArrowRight', 'KeyB', 'Space', 'PageDown', 'VolumeDown', 'AudioVolumeDown'];
 
       window.addEventListener('keydown', (e) => {
-        if (e.repeat) return; // Ignore auto-repeat keydown
+        // Ignore if modal is open and user presses Escape
+        if (e.key === 'Escape') {
+          toggleHistoryModal(false);
+          return;
+        }
+        if (e.repeat) return; // Ignore OS key-repeat events while holding
 
         if (team1Keys.includes(e.code) || team1Keys.includes(e.key)) {
           e.preventDefault();
-          registerScoreEvent('team1');
+          document.activeElement?.blur();
+          handlePressStart('team1');
         } else if (team2Keys.includes(e.code) || team2Keys.includes(e.key)) {
           e.preventDefault();
-          registerScoreEvent('team2');
+          document.activeElement?.blur();
+          handlePressStart('team2');
         } else if (e.code === 'KeyR' || e.key === 'r' || e.key === 'R') {
           promptReset();
         } else if (e.code === 'KeyS' || e.key === 's' || e.key === 'S') {
           toggleServer(currentServer === 'team1' ? 'team2' : 'team1');
+        } else if (e.code === 'KeyL' || e.key === 'l' || e.key === 'L') {
+          toggleHistoryModal();
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (team1Keys.includes(e.code) || team1Keys.includes(e.key)) {
+          e.preventDefault();
+          handlePressEnd('team1');
+        } else if (team2Keys.includes(e.code) || team2Keys.includes(e.key)) {
+          e.preventDefault();
+          handlePressEnd('team2');
         }
       });
     }
@@ -442,7 +892,7 @@
           glowEl.className = 'glow-layer flash-red';
           setTimeout(() => {
             glowEl.className = 'glow-layer';
-          }, 250);
+          }, 280);
         } else {
           glowEl.className = 'glow-layer flash-white';
           setTimeout(() => {
@@ -461,23 +911,160 @@
     }
 
     function promptReset() {
-      if (confirm("Reset score to 0 - 0?")) {
-        // Clear pending timers
-        clearTimeout(teamState.team1.timer);
-        clearTimeout(teamState.team2.timer);
-        teamState.team1.timer = null;
-        teamState.team2.timer = null;
-        teamState.team1.status = 'IDLE';
-        teamState.team2.status = 'IDLE';
+      document.activeElement?.blur();
+      const hasScoreOrPoints = teamState.team1.score > 0 || teamState.team2.score > 0 || currentPointsLog.length > 0;
+      const confirmMsg = hasScoreOrPoints
+        ? `Save current game (${teamState.team1.score} - ${teamState.team2.score}) to Match Log and reset to 0 - 0?`
+        : "Reset score to 0 - 0?";
+
+      if (confirm(confirmMsg)) {
+        handlePressCancel('team1');
+        handlePressCancel('team2');
+
+        // Archive current game if at least one point was scored
+        if (hasScoreOrPoints) {
+          const nowIso = new Date().toISOString();
+          gamesArchive.unshift({
+            id: 'game-' + Date.now(),
+            gameNumber: gamesArchive.length + 1,
+            startedAt: currentGameStartedAt || (currentPointsLog[0] && currentPointsLog[0].timestamp) || nowIso,
+            endedAt: nowIso,
+            finalScore1: teamState.team1.score,
+            finalScore2: teamState.team2.score,
+            points: currentPointsLog.slice()
+          });
+        }
 
         teamState.team1.score = 0;
         teamState.team2.score = 0;
         currentServer = 'team1';
-        scoreHistory = [];
-        saveScores();
+        currentGameStartedAt = null;
+        currentPointsLog = [];
+
+        saveState();
         renderScores();
-        showToast("Score reset to 0 - 0");
+        renderHistoryModal();
+        showToast(hasScoreOrPoints ? "Game saved to Log & reset to 0 - 0" : "Score reset to 0 - 0");
       }
+    }
+
+    function toggleHistoryModal(forceState) {
+      document.activeElement?.blur();
+      const modal = document.getElementById('history-modal');
+      if (!modal) return;
+      const shouldOpen = forceState !== undefined ? forceState : modal.classList.contains('hidden');
+      if (shouldOpen) {
+        renderHistoryModal();
+        modal.classList.remove('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function toggleGameCardDetails(cardId) {
+      const el = document.getElementById(cardId);
+      if (el) {
+        el.classList.toggle('hidden');
+      }
+    }
+
+    function clearMatchHistory() {
+      if (gamesArchive.length === 0) return;
+      if (confirm("Clear all archived games from the Match Log?")) {
+        gamesArchive = [];
+        saveState();
+        renderScores();
+        renderHistoryModal();
+        showToast("Archived games cleared");
+      }
+    }
+
+    function renderPointsListHtml(points) {
+      if (!points || points.length === 0) {
+        return `<div style="color:#71717A;font-size:12px;padding:4px 0;">No points recorded yet.</div>`;
+      }
+      return points.map((pt, idx) => {
+        const isTeam1 = pt.team === 'team1';
+        const teamName = isTeam1 ? 'Team A (Yellow)' : 'Team B (Cyan)';
+        const teamClass = isTeam1 ? 't1-text' : 't2-text';
+        const timeDisplay = pt.timeStr || formatClockTime(pt.timestamp);
+        return `
+          <div class="point-row">
+            <span class="point-idx">#${idx + 1}</span>
+            <span class="point-team ${teamClass}">${teamName}</span>
+            <span class="point-score">${pt.score1} - ${pt.score2}</span>
+            <span class="point-time">🕒 ${timeDisplay}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderHistoryModal() {
+      const container = document.getElementById('history-modal-body');
+      if (!container) return;
+
+      const hasCurrentGame = teamState.team1.score > 0 || teamState.team2.score > 0 || currentPointsLog.length > 0;
+      let html = '';
+
+      if (hasCurrentGame) {
+        const startedStr = formatDateTimeShort(currentGameStartedAt || (currentPointsLog[0] && currentPointsLog[0].timestamp));
+        html += `
+          <div class="game-card live-game">
+            <div class="game-summary" onclick="toggleGameCardDetails('pts-current')">
+              <div class="game-meta">
+                <div class="game-label">
+                  <span>Game #${gamesArchive.length + 1}</span>
+                  <span class="live-pill">In Progress</span>
+                </div>
+                <div class="game-submeta">Started ${startedStr} · ${currentPointsLog.length} points logged (tap to expand/collapse)</div>
+              </div>
+              <div class="game-final-score">
+                <span class="t1-text">${teamState.team1.score}</span>
+                <span class="score-sep">-</span>
+                <span class="t2-text">${teamState.team2.score}</span>
+              </div>
+            </div>
+            <div id="pts-current" class="points-timeline">
+              ${renderPointsListHtml(currentPointsLog)}
+            </div>
+          </div>
+        `;
+      }
+
+      gamesArchive.forEach((game, index) => {
+        const timelineId = `pts-archive-${index}`;
+        const startStr = formatDateTimeShort(game.startedAt);
+        const endStr = formatClockTime(game.endedAt);
+        const pointCount = Array.isArray(game.points) ? game.points.length : 0;
+        const isFirst = !hasCurrentGame && index === 0;
+
+        html += `
+          <div class="game-card">
+            <div class="game-summary" onclick="toggleGameCardDetails('${timelineId}')">
+              <div class="game-meta">
+                <div class="game-label">
+                  <span>Game #${game.gameNumber || (gamesArchive.length - index)}</span>
+                </div>
+                <div class="game-submeta">${startStr} – ${endStr} · ${pointCount} points (tap to view timeline)</div>
+              </div>
+              <div class="game-final-score">
+                <span class="t1-text">${game.finalScore1}</span>
+                <span class="score-sep">-</span>
+                <span class="t2-text">${game.finalScore2}</span>
+              </div>
+            </div>
+            <div id="${timelineId}" class="points-timeline ${isFirst ? '' : 'hidden'}">
+              ${renderPointsListHtml(game.points)}
+            </div>
+          </div>
+        `;
+      });
+
+      if (!html) {
+        html = `<div class="empty-log">No games or points logged yet. Start scoring and every point's exact timestamp will appear here!</div>`;
+      }
+
+      container.innerHTML = html;
     }
 
     function showToast(msg) {
@@ -501,7 +1088,7 @@
       });
     }
 
-    window.addEventListener('DOMContentLoaded', init);
+    window.onload = init;
   </script>
 </body>
 </html>
