@@ -278,6 +278,32 @@
       cursor: pointer;
     }
 
+    .modal-btn-accent {
+      background-color: #FAFF00;
+      color: #000000;
+      border-color: #FAFF00;
+    }
+
+    .log-file-banner {
+      background-color: #18181B;
+      border: 1px solid #27272A;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: #A1A1AA;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .log-file-banner strong {
+      color: #FAFF00;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
     .modal-btn-danger {
       color: #FCA5A5;
       border-color: rgba(239, 68, 68, 0.4);
@@ -581,6 +607,8 @@
           <span>🏐 Match &amp; Point Log</span>
         </div>
         <div class="modal-actions">
+          <button onclick="openLogFile()" class="modal-btn modal-btn-accent" title="Open the log file on your device">📁 View File</button>
+          <button onclick="shareLogFile()" class="modal-btn" title="Share the log file via WhatsApp, Email, or Quick Share">Share ↗</button>
           <button onclick="toggleHistoryModal(false)" class="modal-btn">Close ✕</button>
         </div>
       </div>
@@ -667,11 +695,46 @@
       team2: { score: 0, isPressed: false, holdFired: false, holdTimer: null, lastActionAt: 0 }
     };
 
+    function logToFile(tag, msg) {
+      try {
+        if (window.AndroidNative && window.AndroidNative.log) {
+          window.AndroidNative.log(tag, msg);
+        } else {
+          console.log(`[${tag}] ${msg}`);
+        }
+      } catch (e) {}
+    }
+
+    function openLogFile() {
+      try {
+        if (window.AndroidNative && window.AndroidNative.openLog) {
+          window.AndroidNative.openLog();
+        } else {
+          showToast("Log file: Download/volleyball-scoreboard.log");
+        }
+      } catch (e) {
+        showToast("Log file: Download/volleyball-scoreboard.log");
+      }
+    }
+
+    function shareLogFile() {
+      try {
+        if (window.AndroidNative && window.AndroidNative.shareLog) {
+          window.AndroidNative.shareLog();
+        } else {
+          showToast("Log file: Download/volleyball-scoreboard.log");
+        }
+      } catch (e) {
+        showToast("Log file: Download/volleyball-scoreboard.log");
+      }
+    }
+
     function init() {
       loadSavedState();
       renderScores();
       setupPointerListeners();
       setupKeyboardListeners();
+      logToFile("INIT", `App ready. Score: ${teamState.team1.score} - ${teamState.team2.score}. Server: ${currentServer}`);
     }
 
     function formatClockTime(isoOrDate) {
@@ -758,6 +821,7 @@
       renderScores();
       showToast(`${newServer === 'team1' ? 'Team A' : 'Team B'} is serving`);
       triggerHaptic(30);
+      logToFile("SERVER", `Server changed to ${newServer === 'team1' ? 'Team A (Yellow)' : 'Team B (Cyan)'}`);
     }
 
     function setHoldProgress(team, active) {
@@ -861,6 +925,7 @@
       renderScores();
       triggerVisualFeedback(team, 'pop');
       triggerHaptic(40);
+      logToFile("POINT", `${team === 'team1' ? 'Team A (Yellow)' : 'Team B (Cyan)'} scored (+1). Score is now: Team A ${teamState.team1.score} - ${teamState.team2.score} Team B. Server: ${currentServer === 'team1' ? 'Team A' : 'Team B'}`);
     }
 
     function decrementTeamScore(team) {
@@ -900,6 +965,7 @@
       triggerVisualFeedback(team, 'red');
       triggerHaptic(90);
       showToast(`${team === 'team1' ? 'Team A' : 'Team B'} -1 point`);
+      logToFile("UNDO", `${team === 'team1' ? 'Team A (Yellow)' : 'Team B (Cyan)'} hold detected -> (-1 UNDO). Score is now: Team A ${teamState.team1.score} - ${teamState.team2.score} Team B. Server: ${currentServer === 'team1' ? 'Team A' : 'Team B'}`);
     }
 
     /* Pointer Listeners for Touch / Mouse on Both Team Panels */
@@ -1080,8 +1146,10 @@
 
       if (saveScore) {
         showToast(hasScoreOrPoints ? "Game saved to Log & new game started" : "New game started (0 - 0)");
+        logToFile("NEW_GAME", `New game confirmed (Score was saved to history: ${hasScoreOrPoints}). Score reset to 0 - 0`);
       } else {
         showToast("Score discarded & new game started");
+        logToFile("NEW_GAME", `New game confirmed (Score discarded). Score reset to 0 - 0`);
       }
     }
 
@@ -1130,7 +1198,12 @@
       if (!container) return;
 
       const hasCurrentGame = teamState.team1.score > 0 || teamState.team2.score > 0 || currentPointsLog.length > 0;
-      let html = '';
+      let html = `
+        <div class="log-file-banner">
+          <div>📁 Saved to device: <strong>Download/volleyball-scoreboard.log</strong></div>
+          <div style="font-size:10px;color:#71717A;">(Samsung My Files &gt; Downloads)</div>
+        </div>
+      `;
 
       if (hasCurrentGame) {
         const startedStr = formatDateTimeShort(currentGameStartedAt || (currentPointsLog[0] && currentPointsLog[0].timestamp));

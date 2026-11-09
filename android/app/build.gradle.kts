@@ -22,9 +22,10 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("scoreboard-signing-key.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-            keyAlias = System.getenv("KEY_ALIAS") ?: "scoreboard"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD") ?: ""
+            val pass = System.getenv("KEYSTORE_PASSWORD")?.takeIf { it.isNotBlank() } ?: "volleyball123"
+            storePassword = pass
+            keyAlias = System.getenv("KEY_ALIAS")?.takeIf { it.isNotBlank() } ?: "scoreboard"
+            keyPassword = System.getenv("KEY_PASSWORD")?.takeIf { it.isNotBlank() } ?: pass
             enableV1Signing = true
             enableV2Signing = true
         }

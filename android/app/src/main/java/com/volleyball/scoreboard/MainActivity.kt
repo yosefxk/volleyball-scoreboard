@@ -47,6 +47,12 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
+        ScoreboardLogger.log(
+            this,
+            "APP_START",
+            "Beach Volleyball Scoreboard launched on ${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE}, SDK ${Build.VERSION.SDK_INT})"
+        )
+
         webView = findViewById(R.id.webView)
         webView.apply {
             setBackgroundColor(0xFF000000.toInt())
@@ -110,13 +116,16 @@ class MainActivity : AppCompatActivity() {
                     if (now - lastKeyDownTimeTeam1 >= HARDWARE_DEBOUNCE_MS) {
                         lastKeyDownTimeTeam1 = now
                         isKeyDownTeam1 = true
+                        ScoreboardLogger.log(this, "HARDWARE_KEY", "Team A (Yellow) key DOWN: code=$code (${KeyEvent.keyCodeToString(code)})")
                         triggerRemoteKeyEvent("team1", "down")
                     }
                 }
                 return true
             } else if (event.action == KeyEvent.ACTION_UP) {
                 if (isKeyDownTeam1) {
+                    val heldMs = SystemClock.elapsedRealtime() - lastKeyDownTimeTeam1
                     isKeyDownTeam1 = false
+                    ScoreboardLogger.log(this, "HARDWARE_KEY", "Team A (Yellow) key UP: held for ${heldMs}ms")
                     triggerRemoteKeyEvent("team1", "up")
                 }
                 return true
@@ -128,13 +137,16 @@ class MainActivity : AppCompatActivity() {
                     if (now - lastKeyDownTimeTeam2 >= HARDWARE_DEBOUNCE_MS) {
                         lastKeyDownTimeTeam2 = now
                         isKeyDownTeam2 = true
+                        ScoreboardLogger.log(this, "HARDWARE_KEY", "Team B (Cyan) key DOWN: code=$code (${KeyEvent.keyCodeToString(code)})")
                         triggerRemoteKeyEvent("team2", "down")
                     }
                 }
                 return true
             } else if (event.action == KeyEvent.ACTION_UP) {
                 if (isKeyDownTeam2) {
+                    val heldMs = SystemClock.elapsedRealtime() - lastKeyDownTimeTeam2
                     isKeyDownTeam2 = false
+                    ScoreboardLogger.log(this, "HARDWARE_KEY", "Team B (Cyan) key UP: held for ${heldMs}ms")
                     triggerRemoteKeyEvent("team2", "up")
                 }
                 return true
@@ -206,6 +218,26 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun vibrate(duration: Long) {
             activity.vibratePhone(duration)
+        }
+
+        @JavascriptInterface
+        fun log(tag: String, message: String) {
+            ScoreboardLogger.log(activity, tag, message)
+        }
+
+        @JavascriptInterface
+        fun shareLog() {
+            ScoreboardLogger.shareLog(activity)
+        }
+
+        @JavascriptInterface
+        fun openLog() {
+            ScoreboardLogger.openLog(activity)
+        }
+
+        @JavascriptInterface
+        fun getLogLocation(): String {
+            return "Download/${ScoreboardLogger.FILE_NAME}"
         }
     }
 }
