@@ -212,7 +212,7 @@
       font-weight: 900;
     }
 
-    /* MATCH LOG MODAL OVERLAY */
+    /* NEW GAME MODAL BACKDROP (Simple Center Dialog) */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -226,48 +226,68 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    .modal-card {
-      width: 100%;
-      max-width: 760px;
-      max-height: 92vh;
-      background-color: #121215;
-      border: 1px solid #27272A;
-      border-radius: 16px;
+    /* MATCH LOG FULLSCREEN VIEW (OPTIMIZED FOR LANDSCAPE SCREEN) */
+    .log-fullscreen {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 120;
+      background-color: #0A0A0D;
+      color: #FFFFFF;
       display: flex;
       flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95);
-      touch-action: pan-y;
+      user-select: auto;
+      -webkit-user-select: auto;
     }
 
-    .modal-header {
-      padding: 14px 18px;
+    .log-topbar {
+      height: 50px;
+      min-height: 50px;
+      padding: 0 16px;
+      background-color: #141418;
       border-bottom: 1px solid #27272A;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background-color: #18181B;
+      gap: 12px;
+      z-index: 20;
     }
 
-    .modal-title {
-      font-size: 15px;
+    .log-topbar-title {
+      font-size: 14px;
       font-weight: 900;
-      letter-spacing: 0.8px;
       text-transform: uppercase;
-      color: #FFFFFF;
+      letter-spacing: 0.8px;
       display: flex;
       align-items: center;
       gap: 8px;
+      color: #FFFFFF;
     }
 
-    .modal-actions {
+    .log-file-pill {
+      font-size: 11px;
+      color: #71717A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .log-file-pill strong {
+      color: #FAFF00;
+      font-family: monospace;
+    }
+
+    .log-topbar-actions {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
     .modal-btn {
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 8px;
       background-color: #27272A;
       color: #E4E4E7;
@@ -285,79 +305,166 @@
       border-color: #FAFF00;
     }
 
-    .log-file-banner {
-      background-color: #18181B;
-      border: 1px solid #27272A;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 11px;
-      color: #A1A1AA;
+    .modal-btn-close {
+      background-color: #3F3F46;
+      color: #FFFFFF;
+      border-color: #52525B;
+    }
+
+    /* TWO-PANEL MASTER/DETAIL SPLIT VIEW */
+    .log-split-view {
+      flex: 1 1 0px;
+      min-height: 0;
+      height: calc(100vh - 50px);
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 4px;
-    }
-
-    .log-file-banner strong {
-      color: #FAFF00;
-      font-family: monospace;
-      font-size: 12px;
-    }
-
-    .modal-btn-danger {
-      color: #FCA5A5;
-      border-color: rgba(239, 68, 68, 0.4);
-    }
-
-    .modal-body {
-      padding: 12px 16px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
-      overscroll-behavior: contain;
-    }
-
-    .game-card {
-      background-color: #18181B;
-      border: 1px solid #27272A;
-      border-radius: 12px;
+      flex-direction: row;
       overflow: hidden;
     }
 
-    .game-card.live-game {
-      border-color: rgba(250, 255, 0, 0.45);
+    /* LEFT PANE: LIST OF GAMES */
+    .log-games-pane {
+      width: 36%;
+      min-width: 270px;
+      max-width: 400px;
+      height: 100%;
+      border-right: 1px solid #27272A;
+      background-color: #101014;
+      display: flex;
+      flex-direction: column;
+      overflow-y: scroll;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+      padding: 12px;
+      gap: 8px;
     }
 
-    .game-summary {
+    .log-game-item {
       padding: 12px 14px;
+      border-radius: 10px;
+      background-color: #17171C;
+      border: 1px solid #27272A;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .log-game-item:active, .log-game-item.selected {
+      background-color: #22222C;
+      border-color: #FAFF00;
+      box-shadow: 0 0 14px rgba(250, 255, 0, 0.18);
+    }
+
+    .log-game-item-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      cursor: pointer;
-      gap: 12px;
     }
 
-    .game-summary:hover {
-      background-color: rgba(255, 255, 255, 0.03);
+    .log-game-title {
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #FFFFFF;
     }
 
-    .game-meta {
+    .log-game-score {
+      font-size: 18px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .log-game-meta {
+      font-size: 11px;
+      color: #71717A;
+    }
+
+    /* RIGHT PANE: SELECTED GAME POINT TIMELINE */
+    .log-timeline-pane {
+      flex: 1 1 0px;
+      min-width: 0;
+      height: 100%;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      background-color: #0A0A0D;
+      overflow: hidden;
     }
 
-    .game-label {
+    .log-timeline-header {
+      height: 44px;
+      min-height: 44px;
+      padding: 0 16px;
+      background-color: #141418;
+      border-bottom: 1px solid #27272A;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .log-timeline-info {
       font-size: 12px;
       font-weight: 800;
-      color: #E4E4E7;
+      color: #D4D4D8;
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .log-timeline-scroll {
+      flex: 1 1 0px;
+      min-height: 0;
+      height: calc(100% - 44px);
+      overflow-y: scroll;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior: contain;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .log-point-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 14px;
+      border-radius: 8px;
+      background-color: #131317;
+      border: 1px solid #222228;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .log-point-num {
+      font-weight: 800;
+      color: #71717A;
+      min-width: 44px;
+    }
+
+    .log-point-team {
+      font-weight: 900;
+      flex: 1;
+    }
+
+    .log-point-score {
+      font-size: 16px;
+      font-weight: 900;
+      padding: 0 16px;
+      color: #FFFFFF;
+    }
+
+    .log-point-time {
+      font-size: 12px;
+      color: #A1A1AA;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
 
     .live-pill {
@@ -372,73 +479,13 @@
       text-transform: uppercase;
     }
 
-    .game-submeta {
-      font-size: 11px;
-      color: #71717A;
-    }
-
-    .game-final-score {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 20px;
-      font-weight: 900;
-      font-variant-numeric: tabular-nums;
-    }
-
     .t1-text { color: #FAFF00; }
     .t2-text { color: #00F0FF; }
     .score-sep { color: #52525B; font-size: 15px; }
 
-    .points-timeline {
-      border-top: 1px solid #27272A;
-      background-color: #0E0E11;
-      padding: 10px 14px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 6px;
-      touch-action: pan-y;
-    }
-
-    .point-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 11px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      background-color: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      font-variant-numeric: tabular-nums;
-      touch-action: pan-y;
-    }
-
-    .point-idx {
-      color: #71717A;
-      font-weight: 700;
-      min-width: 36px;
-    }
-
-    .point-team {
-      font-weight: 800;
-      flex: 1;
-    }
-
-    .point-score {
-      font-weight: 900;
-      margin: 0 12px;
-      color: #E4E4E7;
-    }
-
-    .point-time {
-      color: #A1A1AA;
-      font-size: 11px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-
     .empty-log {
       text-align: center;
-      padding: 32px 16px;
+      padding: 40px 16px;
       color: #71717A;
       font-size: 13px;
     }
@@ -602,20 +649,26 @@
     </div>
   </div>
 
-  <!-- MATCH & POINT HISTORY MODAL -->
-  <div id="history-modal" class="modal-backdrop hidden" onclick="if (event.target === this) toggleHistoryModal(false)">
-    <div class="modal-card">
-      <div class="modal-header">
-        <div class="modal-title">
-          <span>🏐 Match &amp; Point Log</span>
-        </div>
-        <div class="modal-actions">
-          <button onclick="openLogFile()" class="modal-btn modal-btn-accent" title="Open the log file on your device">📁 View File</button>
-          <button onclick="shareLogFile()" class="modal-btn" title="Share the log file via WhatsApp, Email, or Quick Share">Share ↗</button>
-          <button onclick="toggleHistoryModal(false)" class="modal-btn">Close ✕</button>
-        </div>
+  <!-- MATCH & POINT HISTORY FULLSCREEN VIEW (LANDSCAPE TWO-PANEL) -->
+  <div id="history-modal" class="log-fullscreen hidden">
+    <div class="log-topbar">
+      <div class="log-topbar-title">
+        <span>🏐 Match &amp; Point Log</span>
       </div>
-      <div id="history-modal-body" class="modal-body"></div>
+      <div class="log-file-pill">
+        <span>📁 Auto-saved: <strong>Download/volleyball-scoreboard.log</strong></span>
+      </div>
+      <div class="log-topbar-actions">
+        <button onclick="openLogFile()" class="modal-btn modal-btn-accent" title="Open the log file on your device">📁 View File</button>
+        <button onclick="shareLogFile()" class="modal-btn" title="Share the log file via WhatsApp, Email, or Quick Share">Share ↗</button>
+        <button onclick="toggleHistoryModal(false)" class="modal-btn modal-btn-close">✕ Close</button>
+      </div>
+    </div>
+    <div class="log-split-view">
+      <!-- LEFT PANE: LIST OF GAMES -->
+      <div id="log-games-list" class="log-games-pane"></div>
+      <!-- RIGHT PANE: SELECTED GAME POINT TIMELINE -->
+      <div id="log-timeline-pane" class="log-timeline-pane"></div>
     </div>
   </div>
 
@@ -1169,16 +1222,16 @@
       }
     }
 
-    function toggleGameCardDetails(cardId) {
-      const el = document.getElementById(cardId);
-      if (el) {
-        el.classList.toggle('hidden');
-      }
+    let selectedGameId = 'current';
+
+    function selectGameLog(gameId) {
+      selectedGameId = gameId;
+      renderHistoryModal();
     }
 
     function renderPointsListHtml(points) {
       if (!points || points.length === 0) {
-        return `<div style="color:#71717A;font-size:12px;padding:4px 0;">No points recorded yet.</div>`;
+        return `<div class="empty-log" style="padding:24px 0;">No points recorded for this game yet.</div>`;
       }
       return points.map((pt, idx) => {
         const isTeam1 = pt.team === 'team1';
@@ -1186,87 +1239,118 @@
         const teamClass = isTeam1 ? 't1-text' : 't2-text';
         const timeDisplay = pt.timeStr || formatClockTime(pt.timestamp);
         return `
-          <div class="point-row">
-            <span class="point-idx">#${idx + 1}</span>
-            <span class="point-team ${teamClass}">${teamName}</span>
-            <span class="point-score">${pt.score1} - ${pt.score2}</span>
-            <span class="point-time">🕒 ${timeDisplay}</span>
+          <div class="log-point-card">
+            <span class="log-point-num">#${idx + 1}</span>
+            <span class="log-point-team ${teamClass}">${teamName}</span>
+            <span class="log-point-score">${pt.score1} - ${pt.score2}</span>
+            <span class="log-point-time">🕒 ${timeDisplay}</span>
           </div>
         `;
       }).join('');
     }
 
     function renderHistoryModal() {
-      const container = document.getElementById('history-modal-body');
-      if (!container) return;
+      const gamesListEl = document.getElementById('log-games-list');
+      const timelinePaneEl = document.getElementById('log-timeline-pane');
+      if (!gamesListEl || !timelinePaneEl) return;
 
       const hasCurrentGame = teamState.team1.score > 0 || teamState.team2.score > 0 || currentPointsLog.length > 0;
-      let html = `
-        <div class="log-file-banner">
-          <div>📁 Saved to device: <strong>Download/volleyball-scoreboard.log</strong></div>
-          <div style="font-size:10px;color:#71717A;">(Samsung My Files &gt; Downloads)</div>
-        </div>
-      `;
 
+      // Select default game if needed
+      if (selectedGameId === 'current' && !hasCurrentGame && gamesArchive.length > 0) {
+        selectedGameId = gamesArchive[0].id;
+      } else if (selectedGameId !== 'current' && !gamesArchive.some(g => g.id === selectedGameId)) {
+        selectedGameId = hasCurrentGame ? 'current' : (gamesArchive[0]?.id || 'current');
+      }
+
+      // 1. Render Left Games List
+      let gamesHtml = '';
       if (hasCurrentGame) {
-        const startedStr = formatDateTimeShort(currentGameStartedAt || (currentPointsLog[0] && currentPointsLog[0].timestamp));
-        html += `
-          <div class="game-card live-game">
-            <div class="game-summary" onclick="toggleGameCardDetails('pts-current')">
-              <div class="game-meta">
-                <div class="game-label">
-                  <span>Game #${gamesArchive.length + 1}</span>
-                  <span class="live-pill">In Progress</span>
-                </div>
-                <div class="game-submeta">Started ${startedStr} · ${currentPointsLog.length} points logged (tap to expand/collapse)</div>
-              </div>
-              <div class="game-final-score">
+        const isSel = selectedGameId === 'current';
+        const startedStr = formatClockTime(currentGameStartedAt || (currentPointsLog[0] && currentPointsLog[0].timestamp));
+        gamesHtml += `
+          <div class="log-game-item ${isSel ? 'selected' : ''}" onclick="selectGameLog('current')">
+            <div class="log-game-item-header">
+              <span class="log-game-title">
+                <span>Game #${gamesArchive.length + 1}</span>
+                <span class="live-pill">Live</span>
+              </span>
+              <span class="log-game-score">
                 <span class="t1-text">${teamState.team1.score}</span>
                 <span class="score-sep">-</span>
                 <span class="t2-text">${teamState.team2.score}</span>
-              </div>
+              </span>
             </div>
-            <div id="pts-current" class="points-timeline">
-              ${renderPointsListHtml(currentPointsLog)}
-            </div>
+            <div class="log-game-meta">Started ${startedStr} · ${currentPointsLog.length} points</div>
           </div>
         `;
       }
 
-      gamesArchive.forEach((game, index) => {
-        const timelineId = `pts-archive-${index}`;
+      gamesArchive.forEach((game, idx) => {
+        const isSel = selectedGameId === game.id;
         const startStr = formatDateTimeShort(game.startedAt);
         const endStr = formatClockTime(game.endedAt);
-        const pointCount = Array.isArray(game.points) ? game.points.length : 0;
-        const isFirst = !hasCurrentGame && index === 0;
-
-        html += `
-          <div class="game-card">
-            <div class="game-summary" onclick="toggleGameCardDetails('${timelineId}')">
-              <div class="game-meta">
-                <div class="game-label">
-                  <span>Game #${game.gameNumber || (gamesArchive.length - index)}</span>
-                </div>
-                <div class="game-submeta">${startStr} – ${endStr} · ${pointCount} points (tap to view timeline)</div>
-              </div>
-              <div class="game-final-score">
+        const ptCount = Array.isArray(game.points) ? game.points.length : 0;
+        gamesHtml += `
+          <div class="log-game-item ${isSel ? 'selected' : ''}" onclick="selectGameLog('${game.id}')">
+            <div class="log-game-item-header">
+              <span class="log-game-title">
+                <span>Game #${game.gameNumber || (gamesArchive.length - idx)}</span>
+              </span>
+              <span class="log-game-score">
                 <span class="t1-text">${game.finalScore1}</span>
                 <span class="score-sep">-</span>
                 <span class="t2-text">${game.finalScore2}</span>
-              </div>
+              </span>
             </div>
-            <div id="${timelineId}" class="points-timeline ${isFirst ? '' : 'hidden'}">
-              ${renderPointsListHtml(game.points)}
-            </div>
+            <div class="log-game-meta">${startStr} – ${endStr} · ${ptCount} points</div>
           </div>
         `;
       });
 
-      if (!html) {
-        html = `<div class="empty-log">No games or points logged yet. Start scoring and every point's exact timestamp will appear here!</div>`;
+      if (!hasCurrentGame && gamesArchive.length === 0) {
+        gamesHtml = `<div class="empty-log">No games logged yet. Score some points to see them recorded here!</div>`;
+      }
+      gamesListEl.innerHTML = gamesHtml;
+
+      // 2. Render Right Points Timeline
+      let selectedPoints = [];
+      let selectedTitle = '';
+      let selectedScoreHtml = '';
+
+      if (selectedGameId === 'current' && hasCurrentGame) {
+        selectedPoints = currentPointsLog;
+        selectedTitle = `Game #${gamesArchive.length + 1} (Live Game In Progress)`;
+        selectedScoreHtml = `<span class="t1-text">${teamState.team1.score}</span> <span class="score-sep">-</span> <span class="t2-text">${teamState.team2.score}</span>`;
+      } else {
+        const archived = gamesArchive.find(g => g.id === selectedGameId) || gamesArchive[0];
+        if (archived) {
+          selectedPoints = archived.points || [];
+          selectedTitle = `Game #${archived.gameNumber || '1'} (Finished Game)`;
+          selectedScoreHtml = `<span class="t1-text">${archived.finalScore1}</span> <span class="score-sep">-</span> <span class="t2-text">${archived.finalScore2}</span>`;
+        }
       }
 
-      container.innerHTML = html;
+      if (hasCurrentGame || gamesArchive.length > 0) {
+        timelinePaneEl.innerHTML = `
+          <div class="log-timeline-header">
+            <div class="log-timeline-info">
+              <span>${selectedTitle}</span>
+              <span style="margin-left:8px;font-size:15px;font-weight:900;">${selectedScoreHtml}</span>
+            </div>
+            <div style="font-size:11px;color:#71717A;">${selectedPoints.length} points logged (Scroll freely)</div>
+          </div>
+          <div class="log-timeline-scroll">
+            ${renderPointsListHtml(selectedPoints)}
+          </div>
+        `;
+      } else {
+        timelinePaneEl.innerHTML = `
+          <div class="empty-log" style="margin:auto;">
+            Select a game on the left to view its point-by-point history.
+          </div>
+        `;
+      }
     }
 
     function showToast(msg) {
