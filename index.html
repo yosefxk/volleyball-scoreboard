@@ -1207,6 +1207,10 @@
         showToast("Score discarded & new game started");
         logToFile("NEW_GAME", `New game confirmed (Score discarded). Score reset to 0 - 0`);
       }
+
+      if (window.AndroidNative && window.AndroidNative.syncDownloads) {
+        try { window.AndroidNative.syncDownloads(); } catch (e) {}
+      }
     }
 
     function toggleHistoryModal(forceState) {
@@ -1215,6 +1219,9 @@
       if (!modal) return;
       const shouldOpen = forceState !== undefined ? forceState : modal.classList.contains('hidden');
       if (shouldOpen) {
+        if (window.AndroidNative && window.AndroidNative.syncDownloads) {
+          try { window.AndroidNative.syncDownloads(); } catch (e) {}
+        }
         renderHistoryModal();
         modal.classList.remove('hidden');
       } else {

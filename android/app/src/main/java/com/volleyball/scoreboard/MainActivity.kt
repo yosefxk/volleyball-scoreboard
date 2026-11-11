@@ -52,6 +52,8 @@ class MainActivity : AppCompatActivity() {
             "APP_START",
             "Beach Volleyball Scoreboard launched on ${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE}, SDK ${Build.VERSION.SDK_INT})"
         )
+        // Clean up duplicate logs and sync single file on app launch
+        ScoreboardLogger.syncToDownloads(this)
 
         webView = findViewById(R.id.webView)
         webView.apply {
@@ -214,6 +216,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        ScoreboardLogger.syncToDownloads(this)
+    }
+
     inner class WebAppInterface(private val activity: MainActivity) {
         @JavascriptInterface
         fun vibrate(duration: Long) {
@@ -238,6 +245,11 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun getLogLocation(): String {
             return "Download/${ScoreboardLogger.FILE_NAME}"
+        }
+
+        @JavascriptInterface
+        fun syncDownloads() {
+            ScoreboardLogger.syncToDownloads(activity)
         }
     }
 }
